@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doorstep — Ring Event-to-Description Accessibility Studio</title>
+  <link rel="stylesheet" href="/src/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-mark">
+          <span class="icon">🚪</span>
+          <span class="title">Doorstep</span>
+          <span class="badge track-badge">Ring Track — Phase 1</span>
+        </div>
+        <p class="subtitle">Real-time doorbell event-to-description accessibility pipeline for blind and low-vision viewers</p>
+      </div>
+      <div class="header-right">
+        <div id="token-status-badge" class="status-pill checking">
+          <span class="status-dot"></span>
+          <span class="status-text">Checking Ring Token...</span>
+        </div>
+        <button id="refresh-status-btn" class="btn btn-secondary btn-sm" title="Check Token Status">🔄 Check API</button>
+      </div>
+    </header>
+
+    <!-- Token Warning Banner (Shown when token is missing/expired) -->
+    <div id="token-warning-banner" class="token-banner hidden">
+      <div class="banner-icon">⚠️</div>
+      <div class="banner-body">
+        <h3 class="banner-title">No Valid Ring Playground Token Detected</h3>
+        <p class="banner-desc">
+          Ring Partner API sandbox tokens expire after 30 minutes. To test against live Amazon Vision endpoints, obtain a fresh token from the official console:
+        </p>
+        <div class="banner-action-row">
+          <a href="https://developer.amazon.com/ring/console/playground" target="_blank" rel="noopener noreferrer" class="playground-link">
+            https://developer.amazon.com/ring/console/playground ↗
+          </a>
+          <div class="quick-token-input">
+            <input type="password" id="manual-token-input" placeholder="Paste 30-min Playground token here..." />
+            <button id="save-token-btn" class="btn btn-primary btn-sm">Set Token</button>
+          </div>
+        </div>
+        <div class="banner-note">
+          Notice: In expired/missing token state, live Ring API snapshots are honestly blocked (HTTP 401). No canned live responses are fabricated.
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Layout -->
+    <main class="main-container">
+      <!-- Controls Toolbar -->
+      <section class="toolbar-card">
+        <div class="toolbar-title-row">
+          <div class="section-label">1. Webhook Simulator & Source Selection</div>
+          <div class="endpoint-indicator">
+            API Base: <code id="api-endpoint-text">https://api.amazonvision.com/v1</code>
+          </div>
+        </div>
+        <div class="controls-grid">
+          <div class="control-group">
+            <label for="scenario-select">Event Scenario Presets:</label>
+            <select id="scenario-select" class="form-select">
+              <option value="person_porch_package">Courier on Porch with Box (motion: human) — SYNTHETIC, AI-generated frame</option>
+              <option value="vehicle_driveway">Car in Driveway (motion: vehicle) — SYNTHETIC, AI-generated frame</option>
+              <option value="doorbell_chime_press">Doorbell Button Pressed (button_press / ding) — procedurally drawn frame</option>
+              <option value="pitch_black_unusable">Pitch Black Frame (Loud Refusal Test) — procedurally drawn frame</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="event-subtype-input">Ring Sub-Type (data.attributes.sub_type):</label>
+            <input type="text" id="event-subtype-input" class="form-input" value="human" />
+          </div>
+
+          <div class="control-group">
+            <label for="device-id-input">Device Identifier:</label>
+            <input type="text" id="device-id-input" class="form-input" value="ring-cam-front-door" />
+          </div>
+
+          <div class="control-group actions-group">
+            <button id="run-pipeline-btn" class="btn btn-primary btn-lg">
+              <span class="btn-icon">⚡</span> Execute Pipeline
+            </button>
+            <label class="btn btn-secondary btn-file-upload">
+              📁 Upload Frame
+              <input type="file" id="custom-image-input" accept="image/jpeg,image/png" style="display: none;" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- The 4-Step End-to-End Chain Grid -->
+      <div class="pipeline-grid">
+        <!-- Step 1: Webhook Payload -->
+        <div class="pipeline-column">
+          <div class="card card-payload">
+            <div class="card-header">
+              <div class="step-num">1</div>
+              <h2 class="card-title">Ring Webhook Event</h2>
+              <span class="event-type-badge" id="event-type-badge">motion_detected</span>
+            </div>
+            <div class="card-content">
+              <div class="schema-note">
+                <span class="check-icon">✓</span> Normalized per Ring schema: <code>data.attributes.sub_type</code>
+              </div>
+              <pre class="json-viewer" id="json-viewer-content">// Waiting for event...</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Watermark Cropper -->
+        <div class="pipeline-column wide-col">
+          <div class="card card-images">
+            <div class="card-header">
+              <div class="step-num">2</div>
+              <h2 class="card-title">Frame Acquisition & Watermark Excision</h2>
+              <span id="crop-ratio-badge" class="badge crop-badge">Top 15% Cropped</span>
+            </div>
+            <div class="card-content">
+              <div class="image-comparison-tabs">
+                <button class="tab-btn active" data-view="both">Split Comparison</button>
+                <button class="tab-btn" data-view="cropped">Cropped (For Inference)</button>
+                <button class="tab-btn" data-view="raw">Raw (With Watermark)</button>
+              </div>
+
+              <div class="image-viewport" id="image-viewport">
+                <div class="image-box raw-box" id="raw-image-box">
+                  <div class="box-label" id="raw-box-label">Input Frame (Watermark Zone Boxed)</div>
+                  <div class="frame-origin-note" id="frame-origin-note">
+                    Frame source: not yet run. No frame in this demo comes from a live Ring camera.
+                  </div>
+                  <div class="img-wrapper">
+                    <img id="raw-preview-img" src="" alt="Raw frame" class="preview-img" />
+                    <div id="watermark-overlay-box" class="watermark-overlay-box">
+                      <span class="overlay-tag">Mandatory Ring Watermark Overlay (Top 15%)</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="image-box cropped-box" id="cropped-image-box">
+                  <div class="box-label">Cropped Payload (Watermark Excised for Model)</div>
+                  <div class="img-wrapper">
+                    <img id="cropped-preview-img" src="" alt="Cropped frame" class="preview-img" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="crop-telemetry" id="crop-telemetry">
+                <span>Original: <strong id="telemetry-orig-dims">—</strong></span>
+                <span>Inference: <strong id="telemetry-crop-dims">—</strong></span>
+                <span>Rows Excluded: <strong id="telemetry-rows-removed">—</strong></span>
+                <span>Watermark In Payload: <strong id="telemetry-watermark-status" class="status-clean">EXCISED (0%)</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 & 4: Bedrock Nova Pro & Spoken Caption -->
+        <div class="pipeline-column">
+          <!-- Step 3: Bedrock Model Reply -->
+          <div class="card card-inference">
+            <div class="card-header">
+              <div class="step-num">3</div>
+              <h2 class="card-title">Bedrock Nova Pro</h2>
+              <span id="inference-status-badge" class="badge status-idle">IDLE</span>
+            </div>
+            <div class="card-content">
+              <div class="model-meta-row">
+                <span class="meta-tag">Model: <code>amazon.nova-pro-v1:0</code></span>
+                <span class="meta-tag">Region: <code>us-east-1</code></span>
+                <span class="meta-tag" id="latency-tag">Latency: —</span>
+              </div>
+
+              <!-- Refusal Warning Box (Shown when status is REFUSED) -->
+              <div id="refusal-box" class="refusal-box hidden">
+                <div class="refusal-header">
+                  <span class="refusal-icon">🛑</span>
+                  <strong>LOUD REFUSAL TRIGGERED</strong>
+                </div>
+                <p id="refusal-reason-text" class="refusal-reason-text">—</p>
+                <p class="refusal-explanation">
+                  Per accessibility safety rules, unreadable or dark frames refuse explicitly rather than guessing or outputting polite placeholders.
+                </p>
+              </div>
+
+              <!-- Factual Description (Shown when status is DESCRIBED) -->
+              <div id="description-box" class="description-box">
+                <div class="desc-header">One-Sentence Present-Tense Description:</div>
+                <div id="description-text" class="description-text">Run pipeline to generate description...</div>
+                <div class="guardrail-badges">
+                  <span class="guard-pill">✓ No Identity Speculation</span>
+                  <span class="guard-pill">✓ No Motive/Intent Guessing</span>
+                  <span class="guard-pill">✓ Present Tense</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Spoken Accessibility Caption -->
+          <div class="card card-speech">
+            <div class="card-header">
+              <div class="step-num">4</div>
+              <h2 class="card-title">Spoken Accessibility Caption</h2>
+              <span class="badge speech-badge">Web Speech TTS</span>
+            </div>
+            <div class="card-content">
+              <div class="caption-display" id="caption-display">
+                <span class="speech-quote">“</span>
+                <span id="spoken-caption-text">Spoken audio output will appear here.</span>
+                <span class="speech-quote">”</span>
+              </div>
+              <div class="tts-controls">
+                <button id="speak-btn" class="btn btn-primary btn-speak" disabled>
+                  <span class="btn-icon">🔊</span> Speak Caption
+                </button>
+                <button id="stop-speech-btn" class="btn btn-secondary btn-sm" disabled>⏹ Stop</button>
+                <div class="tts-voice-options">
+                  <label for="voice-select">Voice:</label>
+                  <select id="voice-select" class="form-select select-sm"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-left">
+        <strong>Doorstep</strong> — Hackathon Project 2 (Ring Track Phase 1)
+      </div>
+      <div class="footer-right">
+        <span>Verified against: Ring Partner API June 8, 2026 Watermark Spec • AWS Bedrock Nova Pro</span>
+      </div>
+    </footer>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

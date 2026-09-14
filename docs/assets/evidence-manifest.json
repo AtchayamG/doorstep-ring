@@ -1,0 +1,22 @@
+{
+  "01-token-missing-banner.png": {
+    "path": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\02-ring-doorstep\\docs\\assets\\screenshots\\01-token-missing-banner.png",
+    "sha256": "ebcfb9711e6b4241a0b8efc407797adb031d4f895557cbe67bca55ccebfaa8d9",
+    "description": "Initial surface state displaying honest token warning banner with link to Developers Playground (https://developer.amazon.com/ring/console/playground) and API status showing 401 Unauthorized."
+  },
+  "02-porch-package-pipeline.png": {
+    "path": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\02-ring-doorstep\\docs\\assets\\screenshots\\02-porch-package-pipeline.png",
+    "sha256": "6c47742ea6bb804eb40101b19e1a74971a3dc74dc30e4a7ab74c50e1c10e0d2e",
+    "description": "Full 4-step pipeline execution for courier package event. Step 1 shows normalized data.attributes.sub_type (\"human\"). Step 2 shows 134 rows (15%) cropped excising watermark. Step 3 shows Bedrock Nova Pro description (\"A man wearing a blue jacket and blue jeans stands on the porch holding a cardboard box.\"). Step 4 shows spoken accessibility caption."
+  },
+  "03-vehicle-driveway-pipeline.png": {
+    "path": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\02-ring-doorstep\\docs\\assets\\screenshots\\03-vehicle-driveway-pipeline.png",
+    "sha256": "e40e0185afbea9f30aa68122994fbb060661ba20eac408d13283ec4cbaa16131",
+    "description": "Full pipeline execution for vehicle event (sub_type: \"vehicle\"). Shows raw vs cropped frame comparison, Bedrock Nova Pro description (\"A silver car is parked in the driveway of a house.\"), and audio speech synthesis ready."
+  },
+  "04-loud-refusal-pitch-black.png": {
+    "path": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\02-ring-doorstep\\docs\\assets\\screenshots\\04-loud-refusal-pitch-black.png",
+    "sha256": "86b0490ff833a037c50b4599760f9ad1e8063b66568df0cc08d2c8cd9991b892",
+    "description": "Loud refusal state triggered by pitch black frame (luminance 0.0/255). Shows bright red LOUD REFUSAL TRIGGERED badge with reason: \"Frame is pitch black (average luminance 0.0/255). No visual features are discernible.\", no fake transcript, and refusal speech alert."
+  }
+}
