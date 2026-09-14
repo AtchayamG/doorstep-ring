@@ -11,24 +11,27 @@
 
 ### 1. Ring Partner API & Developers Playground
 * **What Worked Well**:
-  * **Zero Physical Hardware Gate**: The Developers Playground (`developer.amazon.com/ring/console/playground`) is an exceptional developer feature. Being able to test device discovery, snapshot downloads, and WebRTC/WHEP streaming without buying or mounting physical doorbells saves days of setup time.
-  * **Clean REST Design**: Endpoints (`GET /v1/devices`, `GET /v1/devices/{id}/snapshots`) follow predictable HTTP conventions with standard Bearer authentication.
-  * **Live View Simulation**: The sandbox includes realistic event simulation for Package, Vehicle, and Motion event types.
+  * **Six Clean REST Discovery Endpoints (HTTP 200)**: With a live Playground bearer token (`ava.v1:read`), six endpoints round-tripped with HTTP 200 and standard Envoy response headers: `GET /devices`, `GET /locations`, `GET /users/me`, `GET /devices/{id}/capabilities`, `GET /devices/{id}/status`, and `GET /devices/{id}/configurations`. The JSON:API response structure is clean and predictable, and the Doorbell Pro status returned `online: true` within ~300ms.
+  * **Zero Physical Hardware Gate**: The Developers Playground (`developer.amazon.com/ring/console/playground`) is an exceptional developer feature. Being able to test device discovery and explore WHEP streaming without buying or mounting physical doorbells saves days of setup time.
+  * **Active Live View Simulation**: The sandbox initiates real WebRTC WHEP sessions (`POST /devices/{id}/media/streaming/whep/sessions` returning HTTP 201 Created) for Package, Vehicle, and Motion event types.
 * **What Needs Improvement**:
+  * **Sandbox Scope (`ava.v1:read`) Blocked on Events (HTTP 403 Forbidden)**: `GET /devices/{id}/events` returned HTTP 403 Forbidden under the only token scope issued by the Playground (`ava.v1:read`). Even though the Doorbell Pro reports `online: true`, developers building event-driven accessibility applications cannot test real event polling or history against the sandbox device.
+  * **Absence of a Lightweight REST Snapshot Endpoint (HTTP 404 on All Candidate Routes)**: Probing `GET /devices/{id}/snapshot`, `/media`, and `/recordings` returned HTTP 404 Not Found. Ring provides exclusively a WebRTC WHEP stream (`POST .../whep/sessions`). Accessibility pipelines requiring only a single still frame per event are forced to build a full WebRTC peer connection, negotiate SDP offers/answers, handle ICE trickle candidates, and decode an RTP video track, rather than making a simple HTTP GET.
+  * **Undocumented CC BY 4.0 Third-Party Footage in Live View Simulation**: The sandbox video stream is a licensed Creative Commons clip (*"Thief stealing our package" by YouTube user frollard, CC BY 4.0 / clipped from original*). This attribution requirement is absent from the API documentation and portal guides, creating unexpected copyright compliance obligations for developers capturing frames for training datasets, test fixtures, or public demos.
   * **30-Minute Token Lifespan & Silent 401 Body**: Sandboxed tokens expire in 30 minutes without warning, and the API gateway returns HTTP 401 with `server: envoy` and an entirely empty response body (`(empty body)`). Developers are left guessing why a previously working script failed.
-  * **Absence of Computer Vision Metadata**: Webhook alerts provide only a single coarse string under `data.attributes.sub_type` (`human`, `vehicle`, etc.). There are no bounding boxes, coordinates, or confidence scores.
   * **Mandatory Server-Side Watermark**: Burning text (Ring logo, Device ID, timestamp) into media frames per the June 8, 2026 release note contaminates downstream multimodal AI models, forcing developers to build custom crop pipelines.
+  * **Absence of Computer Vision Metadata**: Webhook alerts provide only a single coarse string under `data.attributes.sub_type` (`human`, `vehicle`, etc.). There are no bounding boxes, coordinates, or confidence scores.
 * **Onboarding Experience**: Smooth in the console itself, but the relationship between consumer End-to-End Encryption (TAKE) and partner API scopes is ambiguous across documentation portals.
 * **Testing**: Good interactive curl explorer in the Playground, but lacks an automated local webhook forwarding agent.
 * **Reliability**: Envoy proxy gateway demonstrated sub-300ms response times and 100% uptime throughout testing.
-* **Would You Build With It Again?**: Yes. The presence of a software sandbox makes the Ring Track viable for remote developers.
+* **Would You Build With It Again?**: Yes. The presence of a software sandbox makes the Ring Track viable for remote developers, but opening `/events` and offering a snapshot endpoint would reduce integration time by 80%.
 
 ---
 
 ### 2. Amazon Bedrock (`amazon.nova-pro-v1:0`) & `@aws-sdk/client-bedrock-runtime`
 * **What Worked Well**:
   * **Unified Converse API**: The `ConverseCommand` interface is vastly superior to legacy `InvokeModel`. It accepts binary image buffers directly in memory (`source.bytes: Uint8Array`), eliminating base64 string manipulation or intermediate S3 uploads.
-  * **Prompt Adherence & Guardrails**: Nova Pro adhered strictly to our accessibility guidelines (exactly one sentence, present tense, zero identity/motive speculation) across all photographic test frames.
+  * **Prompt Adherence & Guardrails**: Nova Pro adhered strictly to our accessibility guidelines (exactly one sentence, present tense, zero identity guessing, zero motive speculation) across all photographic test frames.
   * **Built-in Refusal Discipline**: When presented with unreadable or pitch-black frames, Nova Pro reliably followed instructions to emit a structured `REFUSAL:` prefix rather than hallucinating descriptions.
 * **What Needs Improvement**:
   * **Latency Variance**: Inference latency ranged between 3.5s and 5.8s on 896p frames. While acceptable for asynchronous smart-home announcements, sub-2s latency is necessary for immediate doorbell ringing chimes.
@@ -67,9 +70,9 @@
 
 ---
 
-### 5. Vite (v6.2)
+### 5. Vite (v6.4.3)
 * **What Worked Well**:
-  * **Blazing Fast Builds**: Compiled the complete production accessibility surface in **111ms** (`dist/index.html` 12.04 kB).
+  * **Blazing Fast Builds**: Compiled the complete production accessibility surface in **109ms** (`dist/index.html` 12.04 kB, `dist/assets/index-DIRdjYCk.js` 12.01 kB, `dist/assets/index-Cw4WqIJl.css` 12.28 kB). *(Note: `package.json` declares `"vite": "^6.2.0"`, which npm resolved to `v6.4.3` at installation).*
   * **Seamless Proxying**: Built-in development server proxy (`/api` -> `http://127.0.0.1:3002`) avoided CORS issues during frontend development.
 * **What Needs Improvement**:
   * In dual-service setups, relative path resolution for preview and static distribution requires explicit base directory configuration.
@@ -82,7 +85,7 @@
 
 ### 6. Native `node:test` & `node:assert`
 * **What Worked Well**:
-  * **Blistering Execution Speed**: Executed 17 test suites (image cropping, refusal states, webhook normalization, token verification, fixture provenance) in **1.11 seconds**.
+  * **Blistering Execution Speed**: Executed 17 test suites (image cropping, refusal states, webhook normalization, token verification, fixture provenance) in **1.28 seconds**.
   * **Zero Heavy Dependencies**: Completely avoided Jest's complex VM modules, Babel transformations, and configuration overhead.
 * **What Needs Improvement**:
   * Does not provide high-level DOM matchers out of the box (unlike Jest/Vitest testing-library extensions).
@@ -108,7 +111,7 @@
 
 ### 8. `puppeteer-core` (v24)
 * **What Worked Well**:
-  * **Zero Redundant Downloads**: Leveraged the existing system Edge/Chrome browser (`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`), avoiding 300MB Chromium downloads.
+  * **Zero Redundant Downloads**: Leveraged the existing system Edge/Chrome browser (`msedge.exe`), avoiding 300MB Chromium downloads.
   * **Automated Evidence Capture**: Automated end-to-end user flows, captured high-DPI screenshots, and generated SHA-256 evidence hashes in under 20 seconds.
 * **What Needs Improvement**:
   * Requiring custom path detection for host system browsers on Windows machines.
@@ -122,25 +125,34 @@
 ## Prioritised Feature Requests
 
 ### Priority 0 (Critical Developer Experience)
-1. **Ring Partner API — Informative JSON Response on 401**:
+1. **Ring Partner API — Unblock Sandbox Events (`ava.v1:read`) or Provide Event Mocking**:
+   * *Problem*: `GET /devices/{id}/events` returns HTTP 403 Forbidden under the only scope issued by the Developers Playground (`ava.v1:read`). Developers cannot test event-driven pipelines against the online sandbox device.
+   * *Proposed Solution*: Allow `ava.v1:read` to access `GET /devices/{id}/events` in the sandbox environment, or add a "Trigger Test Event" button in the Developers Playground that generates simulated event records.
+2. **Ring Partner API — Lightweight REST Snapshot Endpoint (`GET /snapshot`)**:
+   * *Problem*: All REST media endpoints return 404; media acquisition requires a full WebRTC WHEP negotiation (`POST .../whep/sessions`). Single-frame AI/CV consumers should not be forced into WebRTC session management.
+   * *Proposed Solution*: Provide an authenticated `GET /devices/{id}/snapshot` (or `/latest-frame`) endpoint returning `image/jpeg` with caching headers.
+3. **Ring Partner API — Informative JSON Response on 401**:
    * *Problem*: Expired or missing sandbox tokens return HTTP 401 with an empty body (`(empty body)`).
    * *Proposed Solution*: Return a structured payload: `{"error": "unauthorized", "message": "Playground sandbox token expired after 30 minutes", "playground_url": "https://developer.amazon.com/ring/console/playground"}`.
-2. **Ring Partner API — Watermark Bypass Parameter for AI/CV Partners**:
-   * *Problem*: Mandatory server-side burned-in watermarks corrupt multimodal AI models, forcing developers to crop 15% of the frame and discard image data.
-   * *Proposed Solution*: Provide an authenticated API parameter (e.g. `?watermark=none` or a clean raw stream) for verified accessibility and computer-vision partners.
 
 ### Priority 1 (High Value Enhancements)
-3. **Ring Partner API — Direct Computer Vision Metadata in Webhooks**:
+4. **Ring Developer Portal — Document Third-Party Sandbox Media Licensing**:
+   * *Problem*: The Playground live view simulation uses a Creative Commons clip (*"Thief stealing our package" by YouTube user frollard, CC BY 4.0*), but this attribution requirement is not documented in the developer guides.
+   * *Proposed Solution*: Document sandbox video licensing terms directly in `developer.amazon.com/docs/ring/`, or supply public-domain test video streams.
+5. **Ring Partner API — Watermark Bypass Parameter for AI/CV Partners**:
+   * *Problem*: Mandatory server-side burned-in watermarks corrupt multimodal AI models, forcing developers to crop 15% of the frame and discard image data.
+   * *Proposed Solution*: Provide an authenticated API parameter (e.g. `?watermark=none` or a clean raw stream) for verified accessibility and computer-vision partners.
+6. **Ring Partner API — Direct Computer Vision Metadata in Webhooks**:
    * *Problem*: Webhook metadata provides only coarse strings (`human`, `vehicle`).
    * *Proposed Solution*: Expose Ring's internal bounding box coordinates and object confidence scores under `data.attributes.detections[]`.
-4. **Developers Playground — Configurable Sandbox Token Lifespan**:
-   * *Problem*: 30 minutes is too short for sustained debugging or demonstration sessions.
-   * *Proposed Solution*: Allow developers to select an 8-hour or 24-hour token duration in the Developers Playground for active hackathons and development sprints.
 
 ### Priority 2 (Ecosystem Polish)
-5. **Amazon Bedrock — Synthetic/Procedural Input Guidance**:
+7. **Developers Playground — Configurable Sandbox Token Lifespan**:
+   * *Problem*: 30 minutes is too short for sustained debugging or demonstration sessions.
+   * *Proposed Solution*: Allow developers to select an 8-hour or 24-hour token duration in the Developers Playground for active hackathons and development sprints.
+8. **Amazon Bedrock — Synthetic/Procedural Input Guidance**:
    * *Problem*: Nova Pro refuses procedural geometric drawings without clear error boundary documentation.
    * *Proposed Solution*: Publish documentation outlining visual complexity thresholds for multimodal prompts.
-6. **Ring Developer Portal — Official Royalty-Free Sandbox Media Fixtures**:
+9. **Ring Developer Portal — Official Royalty-Free Sandbox Media Fixtures**:
    * *Problem*: Developers without hardware must resort to synthetic generation, risking C2PA / generative watermark issues.
    * *Proposed Solution*: Provide an official, downloadable bundle of real Ring camera test clips and snapshots with watermarks for CI test suites.

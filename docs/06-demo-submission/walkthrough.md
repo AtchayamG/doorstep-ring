@@ -20,20 +20,23 @@ Doorstep is an intelligent accessibility pipeline designed for blind and low-vis
 3. **First-Class Loud Refusal**: Unusable inputs (pitch-black unlit frames with relative luminance < 3.0/255, corrupted files, or model refusals) trigger a loud and visible `REFUSED` state. The system emits an explicit refusal reason and an audible refusal alert, refusing to output an empty string or misleading polite fallback like "nothing to see".
 4. **Honest Token Absence Transparency**: When the 30-minute Developers Playground sandbox token is expired or absent, the UI displays an honest warning banner linking directly to `https://developer.amazon.com/ring/console/playground` and suppresses live transcripts. No canned live responses are fabricated.
 
-### 3. Media Provenance Disclosure
-**No frame in this demo came from a live Ring camera.** Because we have no production Ring Partner API token, there is no physical camera to fetch frames from.
-* The two photographic preset frames (`SYNTHETIC-ai-generated-porch-delivery.jpg` and `SYNTHETIC-ai-generated-driveway-vehicle.jpg`) are AI-generated test fixtures carrying signed Google C2PA Content Credentials (`c2pa.created: "Created by Google Generative AI"`, `digitalSourceType: trainedAlgorithmicMedia`, `c2pa.edited: "Applied imperceptible SynthID watermark."`).
-* The UI explicitly flags these frames on screen with prominent amber badges: *"Input Frame — SYNTHETIC, AI-GENERATED (C2PA content credentials present)"*.
-* Full C2PA manifests and provenance analysis are documented in [`docs/00-research/fixture-media-provenance.md`](../00-research/fixture-media-provenance.md).
+### 3. Media Provenance & API Reality Disclosure
+**No frame in this demo came from a live Ring camera.**
+* **Why the demo runs on fixtures**: While authenticated testing against the Ring Developers Playground confirmed our Doorbell Pro is `online: true` across 6 discovery endpoints, probing revealed that the Ring Partner API provides **no REST snapshot endpoint** (HTTP 404 on `/snapshot`, `/media`, `/recordings`). Media acquisition is strictly WebRTC WHEP (`POST .../media/streaming/whep/sessions` returning HTTP 201 Created). Standing up a headless WebRTC peer connection to decode video tracks is a scoped Phase 2 milestone. Thus, running on deterministic local fixtures is an explicit engineering decision driven by API reality, ensuring offline test stability.
+* **Synthetic Test Fixtures**: The two photographic preset frames (`SYNTHETIC-ai-generated-porch-delivery.jpg` and `SYNTHETIC-ai-generated-driveway-vehicle.jpg`) are AI-generated test fixtures carrying signed Google C2PA Content Credentials (`c2pa.created: "Created by Google Generative AI"`, `digitalSourceType: trainedAlgorithmicMedia`, `c2pa.edited: "Applied imperceptible SynthID watermark."`).
+* **Visible Amber Provenance Strip**: The web interface explicitly displays prominent amber warning strips directly beneath synthetic input frames:
+  `Synthetic frame (C2PA content credentials present, trainedAlgorithmicMedia). Watermark zone simulated at top 15%.`
+* **Sandbox Simulation Provenance**: The Developers Playground live-view stream itself plays a Creative Commons clip (*"Thief stealing our package" by YouTube user frollard, CC BY 4.0*), which carries third-party attribution requirements.
+* Full C2PA manifests, live API probe logs, and provenance analysis are documented in [`docs/00-research/fixture-media-provenance.md`](../00-research/fixture-media-provenance.md) and [`docs/00-research/ring-live-api-evidence.md`](../00-research/ring-live-api-evidence.md).
 
 ### 4. Verified Screenshot Manifest
 
 | Screenshot | Description | SHA-256 Hash |
 | :--- | :--- | :--- |
-| `01-token-missing-banner.png` | Honest token failure state showing warning banner, link to Developers Playground, and HTTP 401 badge with no fake live transcripts. | `ebcfb9711e6b4241a0b8efc407797adb031d4f895557cbe67bca55ccebfaa8d9` |
-| `02-porch-package-pipeline.png` | Full 4-step pipeline for courier package event. Shows normalized `sub_type: "human"`, 134 rows (15%) cropped excising watermark, Bedrock Nova Pro factual description, and TTS audio caption. | `6c47742ea6bb804eb40101b19e1a74971a3dc74dc30e4a7ab74c50e1c10e0d2e` |
-| `03-vehicle-driveway-pipeline.png` | Full pipeline for vehicle event (`sub_type: "vehicle"`). Shows raw vs cropped comparison, Nova Pro description (*"A silver car is parked in the driveway of a house."*), and audio playback controls. | `e40e0185afbea9f30aa68122994fbb060661ba20eac408d13283ec4cbaa16131` |
-| `04-loud-refusal-pitch-black.png` | First-class loud refusal on pitch-black frame (luminance 0.0/255). Shows bright red `LOUD REFUSAL TRIGGERED` banner, refusal reason, and speech alert. | `86b0490ff833a037c50b4599760f9ad1e8063b66568df0cc08d2c8cd9991b892` |
+| `01-token-missing-banner.png` | Honest token failure state showing warning banner, link to Developers Playground, and HTTP 401 badge with no fake live transcripts. | `2238f687d435b1d759b28dbe4a9a70d668111ea713c3c0b02f579a1deef1b3da` |
+| `02-porch-package-pipeline.png` | Full 4-step pipeline for courier package event. Shows normalized `sub_type: "human"`, input frame with amber C2PA provenance strip, 134 rows (15%) cropped excising watermark, Bedrock Nova Pro factual description, and TTS audio caption. | `7a3707c177239c8536affcb97853b06099d2edde2f520bf65bbf2a03c7685283` |
+| `03-vehicle-driveway-pipeline.png` | Full pipeline for vehicle event (`sub_type: "vehicle"`). Shows synthetic input frame with amber provenance strip, cropped frame with watermark excised, Bedrock Nova Pro description (*"A silver car is parked in the driveway of a house."*), and audio playback controls. | `11f1f110f45887c3128fe23cf07f2caa8edb78c1ad80b2647554512e9aeb0311` |
+| `04-loud-refusal-pitch-black.png` | First-class loud refusal on pitch-black frame (luminance 0.0/255). Shows input frame labelled "Input Frame — PROCEDURALLY DRAWN", bright red `LOUD REFUSAL TRIGGERED` banner, refusal reason, and speech alert. | `608f17d330359478b418661dd4a293b91fa705f7989342d0ce6080466e4cb40c` |
 
 ---
 
@@ -110,7 +113,8 @@ ok 17 - Watermark Cropper: Works with synthetic realistic scene and custom crop 
 
 --- 3. Typechecking and Building Web Surface ---
 > tsc && vite build
-✓ built in 111ms
+vite v6.4.3 building for production...
+✓ built in 109ms
 
 ===================================================
 [Doorstep] ALL TESTS GREEN AND BUILDS PASSED
@@ -127,7 +131,7 @@ Performs a genuine HTTPS request to the Ring Partner API device listing endpoint
 ops\verify-ring-api.cmd
 ```
 
-**Real Terminal Output from Verified Run:**
+**Real Terminal Output from Verified Run (Unauthenticated Probe):**
 ```text
 ===========================================================
 [Doorstep] Probing Ring Partner API Endpoint
@@ -149,7 +153,21 @@ Sandbox tokens have a 30-minute lifespan.
 To obtain a token, visit: https://developer.amazon.com/ring/console/playground
 ===========================================================
 ```
-**What this proves**: Real network integration with `api.amazonvision.com`; genuine Envoy headers (`server: envoy`, `x-request-id`); honest verification that sandbox tokens require active renewal every 30 minutes.
+
+#### What an Authenticated Call Returns (Ground Truth from Playground Token)
+When executed with a valid 30-minute Playground token (`ava.v1:read`), the API returns:
+1. **HTTP 200 on 6 Core Endpoints**:
+   * `GET /devices`: Returns device object with `attributes.name: "Playground Device"` and CDN image confirming **Doorbell Pro**.
+   * `GET /devices/{id}/status`: Reports `online: true` with sub-minute timestamps.
+   * `GET /locations`, `GET /users/me`, `GET /devices/{id}/capabilities`, `GET /devices/{id}/configurations`.
+2. **HTTP 403 Forbidden on Events**:
+   * `GET /devices/{id}/events` returns 403 Forbidden because `ava.v1:read` scope does not permit event history retrieval.
+3. **HTTP 404 Not Found on REST Snapshots**:
+   * `GET /devices/{id}/snapshot`, `/media`, and `/recordings` return 404. Media is exclusively available via WebRTC WHEP (`POST .../whep/sessions` -> 201 Created).
+4. **CC BY 4.0 Video Provenance**:
+   * The Playground package video stream is `"Thief stealing our package" by YouTube user frollard, used under CC BY 4.0 / clipped from original`.
+
+Full authenticated response logs and JSON:API structures are documented in [`docs/00-research/ring-live-api-evidence.md`](../00-research/ring-live-api-evidence.md).
 
 ---
 
@@ -179,7 +197,7 @@ ops\start.cmd
 * **Step 1 (Webhook Event)**: JSON viewer displays the normalized payload with `data.attributes.sub_type: "human"`.
 * **Step 2 (Frame Acquisition & Watermark Excision)**:
   * Left pane: Displays the input frame with a red dashed overlay marking the top 15% watermark zone.
-  * An amber warning strip states: *"Input Frame — SYNTHETIC, AI-GENERATED (C2PA content credentials present)"*.
+  * An amber warning strip states: *"Synthetic frame (C2PA content credentials present, trainedAlgorithmicMedia). Watermark zone simulated at top 15%."*
   * Right pane: Displays the cropped frame with the watermark cleanly excised.
   * Telemetry bar confirms: `Original: 1200x896`, `Inference: 1200x762`, `Rows Excluded: 134px (15%)`, `Watermark In Payload: EXCISED (0%)`.
 * **Step 3 (Bedrock Nova Pro)**:

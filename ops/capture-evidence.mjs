@@ -83,7 +83,7 @@ async function captureEvidence() {
     evidenceManifest['02-porch-package-pipeline.png'] = {
       path: shot2,
       sha256: sha256(shot2),
-      description: 'Full 4-step pipeline execution for courier package event. Step 1 shows normalized data.attributes.sub_type ("human"). Step 2 shows 134 rows (15%) cropped excising watermark. Step 3 shows Bedrock Nova Pro description ("A man wearing a blue jacket and blue jeans stands on the porch holding a cardboard box."). Step 4 shows spoken accessibility caption.'
+      description: 'Full 4-step pipeline execution for courier package event. Step 1 shows normalized data.attributes.sub_type ("human"). Step 2 shows input frame labelled "Input Frame — SYNTHETIC, AI-GENERATED (Watermark Zone Boxed)" with amber provenance strip detailing C2PA credentials and SynthID watermark, alongside cropped frame with 134 rows (15%) excised. Step 3 shows Bedrock Nova Pro description ("A man wearing a blue jacket and blue jeans stands on the porch holding a cardboard box."). Step 4 shows spoken accessibility caption.'
     };
     console.log(`[Capture] Shot 2 saved. SHA-256: ${evidenceManifest['02-porch-package-pipeline.png'].sha256}`);
 
@@ -99,7 +99,7 @@ async function captureEvidence() {
     evidenceManifest['03-vehicle-driveway-pipeline.png'] = {
       path: shot3,
       sha256: sha256(shot3),
-      description: 'Full pipeline execution for vehicle event (sub_type: "vehicle"). Shows raw vs cropped frame comparison, Bedrock Nova Pro description ("A silver car is parked in the driveway of a house."), and audio speech synthesis ready.'
+      description: 'Full pipeline execution for vehicle event (sub_type: "vehicle"). Shows synthetic AI-generated input frame with C2PA provenance strip, cropped frame with watermark excised, Bedrock Nova Pro description ("A silver car is parked in the driveway of a house."), and audio speech synthesis ready.'
     };
     console.log(`[Capture] Shot 3 saved. SHA-256: ${evidenceManifest['03-vehicle-driveway-pipeline.png'].sha256}`);
 
@@ -115,7 +115,7 @@ async function captureEvidence() {
     evidenceManifest['04-loud-refusal-pitch-black.png'] = {
       path: shot4,
       sha256: sha256(shot4),
-      description: 'Loud refusal state triggered by pitch black frame (luminance 0.0/255). Shows bright red LOUD REFUSAL TRIGGERED badge with reason: "Frame is pitch black (average luminance 0.0/255). No visual features are discernible.", no fake transcript, and refusal speech alert.'
+      description: 'Loud refusal state triggered by pitch black frame (luminance 0.0/255). Shows input frame labelled "Input Frame — PROCEDURALLY DRAWN" with code origin note, bright red LOUD REFUSAL TRIGGERED badge with reason: "Frame is pitch black (average luminance 0.0/255). No visual features are discernible.", no fake transcript, and refusal speech alert.'
     };
     console.log(`[Capture] Shot 4 saved. SHA-256: ${evidenceManifest['04-loud-refusal-pitch-black.png'].sha256}`);
 
@@ -126,6 +126,7 @@ async function captureEvidence() {
   } finally {
     await browser.close();
     serverProcess.kill('SIGTERM');
+    process.exit(0);
   }
 }
 
