@@ -115,7 +115,7 @@ projects/02-ring-doorstep/
 ## Quick Start & Verification
 
 ### 1. Run Automated Test Suites
-Runs all 11 unit tests (watermark crop verification, loud refusal assertions, webhook schema parsing, Ring client 401 handling) and compiles both packages:
+Runs all 17 unit tests (watermark crop verification, loud refusal assertions, webhook schema parsing, Ring client 401 handling, fixture provenance guards) and compiles both packages:
 ```cmd
 ops\test.cmd
 ```
