@@ -4,6 +4,8 @@ node_modules/
 # Build outputs
 dist/
 build/
+ops/video/frames/
+ops/video/base.mp4
 
 # Environment and sensitive tokens
 .env

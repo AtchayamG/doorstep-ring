@@ -28,8 +28,8 @@ async function assemble() {
   const baseDur = parseFloat(execSync(probeCmd, { encoding: 'utf-8' }).trim());
   console.log(`[Assemble] Base screencast video duration: ${baseDur.toFixed(2)}s`);
 
-  // Target total video duration
-  const totalDuration = Math.min(Math.max(baseDur, 168.0), 170.0);
+  // Target total video duration (strictly under 180s ceiling)
+  const totalDuration = Math.min(Math.max(baseDur, 170.0), 175.0);
   console.log(`[Assemble] Target final duration: ${totalDuration.toFixed(2)}s`);
 
   console.log('[Assemble] Step 2: Compositing title cards, lower thirds, and audio voiceovers...');

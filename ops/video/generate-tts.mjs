@@ -14,7 +14,7 @@ const segments = [
     id: 'seg01_problem',
     eyebrow: 'PROJECT 2: RING TRACK',
     headline: 'Accessibility for Blind & Low-Vision Viewers',
-    text: "I am Atchayam, building Doorstep for the Ring track. For a blind or low-vision person, a doorbell notification that says 'motion detected' tells you nothing. You cannot tell if someone is delivering a package, standing at the door, or just passing by. Doorstep turns raw Ring alerts into immediate, objective spoken descriptions."
+    text: "Doorstep is an accessibility vision narrator built for the Ring track by Atchayam G. For a blind or low-vision person, a doorbell notification that says 'motion detected' tells you nothing. You cannot tell if someone is delivering a package, standing at the door, or just passing by. Doorstep turns raw Ring alerts into immediate, objective spoken descriptions."
   },
   {
     id: 'seg02_webhook',
@@ -30,9 +30,9 @@ const segments = [
   },
   {
     id: 'seg04_novapro',
-    eyebrow: 'STEP 3 & 4: BEDROCK NOVA PRO',
-    headline: 'Strict Guardrails & Spoken Accessibility Audio',
-    text: "In Step 3, the cropped frame passes to Bedrock Nova Pro under strict accessibility guardrails: one sentence, present tense, zero identity guessing, and zero motive speculation. Nova Pro returns: 'A man wearing a blue jacket and blue jeans stands on the porch holding a cardboard box.' In Step 4, Doorstep speaks this caption aloud."
+    eyebrow: 'STEP 3 & 4: NOVA PRO & GUARDRAILS',
+    headline: 'Active Measurement: Flagging Identity Inference',
+    text: "In Step 3, the cropped frame passes to Bedrock Nova Pro. Asked for no identity speculation, the model still returned: 'A man wearing a blue jacket and jeans stands on the porch holding a cardboard box.' Inferring gender is identity speculation. Doorstep now actively audits compliance instead of asserting it: motive and tense pass green, but identity turns amber, flagging 'man'. In Step 4, Doorstep speaks the caption aloud."
   },
   {
     id: 'seg05_refusal',
@@ -65,9 +65,9 @@ for (let i = 0; i < segments.length; i++) {
   const filePath = join(VO_DIR, filename);
 
   console.log(`[TTS] Generating ${filename}...`);
-  // Use edge_tts via python with +10% rate for energetic, crisp pace
+  const rate = seg.id === 'seg04_novapro' ? '+15%' : '+12%';
   const sanitizedText = seg.text.replace(/"/g, '\\"');
-  const cmd = `python -m edge_tts --voice en-IN-PrabhatNeural --rate=+10% --text "${sanitizedText}" --write-media "${filePath}"`;
+  const cmd = `python -m edge_tts --voice en-IN-PrabhatNeural --rate=${rate} --text "${sanitizedText}" --write-media "${filePath}"`;
   execSync(cmd, { stdio: 'inherit' });
 
   // Probe duration
@@ -79,12 +79,12 @@ for (let i = 0; i < segments.length; i++) {
     filename,
     filePath,
     durationSec: durSec,
-    startSec: currentOffset,
-    endSec: currentOffset + durSec
+    startSec: Math.round(currentOffset * 1000) / 1000,
+    endSec: Math.round((currentOffset + durSec) * 1000) / 1000
   });
 
-  // 0.8s pause between segments (2.0s after the last segment)
-  currentOffset += durSec + (i === segments.length - 1 ? 2.0 : 0.8);
+  // 0.6s pause between segments (2.0s after the last segment)
+  currentOffset += durSec + (i === segments.length - 1 ? 2.0 : 0.6);
 }
 
 const manifestPath = join(__dirname, 'vo-manifest.json');

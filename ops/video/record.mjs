@@ -134,14 +134,14 @@ async function recordSession() {
       }
     }, 250);
 
-    // --- TIMELINE EXECUTION (Matched to vo-manifest.json: total 168.07s) ---
-    console.log('[Record] Beat 1: Problem & Interface Overview (0s - 24.8s)...');
+    // --- TIMELINE EXECUTION (Matched to vo-manifest.json: total 171.00s) ---
+    console.log('[Record] Beat 1: Problem & Interface Overview (0s - 25.2s)...');
     await sleepUntil(10.0);
     // Smooth micro scroll to center content
     await smoothScroll(page, 80, 800);
 
-    console.log('[Record] Beat 2: Webhook Arrival & Normalisation (24.9s - 47.2s)...');
-    await sleepUntil(24.9);
+    console.log('[Record] Beat 2: Webhook Arrival & Normalisation (25.2s - 47.0s)...');
+    await sleepUntil(25.2);
     // Select Courier Scenario
     await page.select('#scenario-select', 'person_porch_package');
     await sleep(400);
@@ -151,24 +151,24 @@ async function recordSession() {
     // Smooth scroll to Step 1 & Step 2 top
     await smoothScroll(page, 200, 700);
 
-    console.log('[Record] Beat 3: Watermark Excision & Telemetry (47.2s - 79.1s)...');
-    await sleepUntil(47.2);
+    console.log('[Record] Beat 3: Watermark Excision & Telemetry (47.0s - 78.1s)...');
+    await sleepUntil(47.0);
     // Smooth scroll down to Step 2 frame comparison
     await smoothScroll(page, 480, 900);
     await sleepUntil(62.0);
     // Scroll slightly further down to clearly frame telemetry bar
     await smoothScroll(page, 620, 800);
 
-    console.log('[Record] Beat 4: Bedrock Nova Pro Inference (79.1s - 103.5s)...');
-    await sleepUntil(79.1);
-    // Scroll to Step 3 & Step 4
+    console.log('[Record] Beat 4: Bedrock Nova Pro Inference & Guardrail Audit (78.1s - 107.9s)...');
+    await sleepUntil(78.1);
+    // Scroll to Step 3 & Step 4 to frame description box, amber pill, and C2PA strip
     await smoothScroll(page, 820, 900);
-    await sleepUntil(88.0);
+    await sleepUntil(98.0);
     // Click Speak Caption
     await page.click('#speak-btn');
 
-    console.log('[Record] Beat 5: First-Class Loud Refusal (103.5s - 127.5s)...');
-    await sleepUntil(103.5);
+    console.log('[Record] Beat 5: First-Class Loud Refusal (107.9s - 131.3s)...');
+    await sleepUntil(107.9);
     // Scroll back to top controls
     await smoothScroll(page, 0, 900);
     await sleep(500);
@@ -180,15 +180,15 @@ async function recordSession() {
     // Scroll down to Step 3 to show bright red REFUSED banner
     await smoothScroll(page, 720, 900);
 
-    console.log('[Record] Beat 6: Truth in Advertising & Provenance (127.5s - 159.2s)...');
-    await sleepUntil(127.5);
+    console.log('[Record] Beat 6: Truth in Advertising & Provenance (131.3s - 162.3s)...');
+    await sleepUntil(131.3);
     // Scroll back up to overview showing amber provenance strip and controls
     await smoothScroll(page, 280, 1000);
-    await sleepUntil(142.0);
+    await sleepUntil(146.0);
     await smoothScroll(page, 480, 800);
 
-    console.log('[Record] Beat 7: Conclusion Outro Hold (159.2s - 168.1s)...');
-    await sleepUntil(168.1);
+    console.log('[Record] Beat 7: Conclusion Outro Hold (162.3s - 171.0s)...');
+    await sleepUntil(171.0);
 
     clearInterval(keepAliveInterval);
     recording = false;
@@ -220,7 +220,16 @@ async function recordSession() {
     console.log(`[Record] ffmpeg concat file written to ${concatPath}`);
 
   } finally {
-    serverProcess.kill('SIGTERM');
+    if (serverProcess) {
+      try {
+        serverProcess.kill('SIGTERM');
+      } catch {}
+      try {
+        if (process.platform === 'win32' && serverProcess.pid) {
+          execSync(`taskkill /pid ${serverProcess.pid} /T /F`, { stdio: 'ignore' });
+        }
+      } catch {}
+    }
   }
 }
 

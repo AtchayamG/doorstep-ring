@@ -748,11 +748,26 @@ body {
 }
 
 .guard-pill {
-  font-size: 0.7rem;
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #6ee7b7;
-  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
   border-radius: 4px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.guard-pill.pass {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.guard-pill.fail {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  font-weight: 600;
 }
 
 /* Refusal Box */

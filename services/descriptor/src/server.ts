@@ -7,6 +7,7 @@ import { config, getRedactedToken } from './config.js';
 import { RingPartnerClient } from './ring-client.js';
 import { executeDoorstepPipeline, RingWebhookPayload } from './event-pipeline.js';
 import { SAMPLE_SCENARIOS } from './sample-frames.js';
+import { auditDescription, GuardrailAudit } from './guardrail-audit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -96,7 +97,8 @@ export function createServer() {
       };
 
       const result = await executeDoorstepPipeline(payload, imageBuffer, ringClient);
-      res.json({ ...result, frameOrigin });
+      const guardrails = result.guardrails || auditDescription(result.description || '');
+      res.json({ ...result, frameOrigin, guardrails });
     } catch (err: any) {
       res.status(500).json({
         error: 'Pipeline description failed',

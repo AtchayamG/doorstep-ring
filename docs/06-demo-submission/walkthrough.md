@@ -204,8 +204,8 @@ ops\start.cmd
 * **Step 3 (Bedrock Nova Pro)**:
   * Badge turns green: `DESCRIBED`.
   * Model latency: `~5840ms`.
-  * Output: *"A man wearing a blue jacket and blue jeans stands on the front porch holding a cardboard box."*
-  * Verified compliance: Exactly one sentence, present tense, zero identity/motive speculation, zero mention of on-screen timestamp or watermark text.
+  * Output: *"A man wearing a blue jacket and jeans stands on the porch holding a cardboard box."*
+  * Measured guardrail compliance: The guardrail audit inspects every description and displays live pass/fail badges directly beneath the text. On this headline fixture, the middle and right badges pass (`No Motive Guessing`, `Single Present-Tense Sentence`), while the identity badge turns amber with the finding `Identity inference: 'man'` — actively measuring model non-compliance rather than asserting compliance.
 * **Step 4 (Spoken Accessibility Caption)**:
   * Speech quote updates with the description text.
   * Click **🔊 Speak Caption** to hear the browser synthesize the audio description via Web Speech API.

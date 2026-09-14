@@ -85,7 +85,7 @@ async function renderCards() {
       <div class="feat-card">🛑 First-Class Loud Refusal</div>
     </div>
   </div>
-  <div class="footer-credit">Built by Atchayam G (solo entrant) • Verified Live Demonstrations</div>
+  <div class="footer-credit">Built by Atchayam G (solo entrant) • Narration: Edge Neural TTS • Verified Live Demonstrations</div>
 </body>
 </html>`;
 
@@ -143,6 +143,9 @@ async function renderCards() {
       <div>Author: <span>Atchayam G</span></div>
       <div>Track: <span>Ring (Phase 1)</span></div>
       <div>Hackathon: <span>Build, Ship, Shape 2026</span></div>
+    </div>
+    <div class="tts-disclosure" style="margin-top: 24px; font-size: 19px; color: #64748b; font-weight: 500;">
+      Narration synthesized with Microsoft Edge Neural TTS (en-IN-PrabhatNeural)
     </div>
   </div>
 </body>

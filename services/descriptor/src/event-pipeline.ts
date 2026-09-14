@@ -1,6 +1,7 @@
 import { cropWatermark, CropResult } from './watermark-cropper.js';
 import { describeCroppedFrame, DescriptionResult } from './bedrock-describer.js';
 import { RingPartnerClient } from './ring-client.js';
+import { auditDescription, GuardrailAudit } from './guardrail-audit.js';
 
 export interface RingWebhookPayload {
   event_id?: string;
@@ -50,6 +51,7 @@ export interface PipelineExecutionResult {
   };
   modelId: string;
   totalLatencyMs: number;
+  guardrails?: GuardrailAudit;
   tokenInfo?: {
     playgroundUrl: string;
     message: string;
@@ -220,6 +222,8 @@ export async function executeDoorstepPipeline(
     }
   );
 
+  const guardrails = inferenceResult.description ? auditDescription(inferenceResult.description) : undefined;
+
   return {
     eventId: event.eventId,
     eventType: event.eventType,
@@ -235,6 +239,7 @@ export async function executeDoorstepPipeline(
     croppedImageBase64: croppedBase64,
     cropDetails,
     modelId: inferenceResult.modelId,
-    totalLatencyMs: Date.now() - overallStart
+    totalLatencyMs: Date.now() - overallStart,
+    guardrails
   };
 }

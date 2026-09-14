@@ -42,10 +42,18 @@ interface PipelineResponse {
   modelId: string;
   totalLatencyMs: number;
   frameOrigin?: 'ai-generated' | 'procedural' | 'ring-live' | 'user-upload';
+  guardrails?: GuardrailRuleResult[];
   tokenInfo?: {
     playgroundUrl: string;
     message: string;
   };
+}
+
+interface GuardrailRuleResult {
+  rule: 'identity-inference' | 'motive-inference' | 'single-present-tense-sentence';
+  pass: boolean;
+  finding: string | null;
+  token?: string | null;
 }
 
 class DoorstepApp {
@@ -78,6 +86,7 @@ class DoorstepApp {
   private refusalReasonText = document.getElementById('refusal-reason-text') as HTMLElement;
   private descriptionBox = document.getElementById('description-box') as HTMLDivElement;
   private descriptionText = document.getElementById('description-text') as HTMLElement;
+  private guardrailBadges = document.getElementById('guardrail-badges') as HTMLDivElement;
 
   private spokenCaptionText = document.getElementById('spoken-caption-text') as HTMLElement;
   private speakBtn = document.getElementById('speak-btn') as HTMLButtonElement;
@@ -373,8 +382,38 @@ class DoorstepApp {
       this.refusalBox.classList.add('hidden');
       this.descriptionBox.style.display = 'flex';
       this.descriptionText.textContent = data.description;
+      this.renderGuardrails(data.guardrails);
       this.spokenCaptionText.textContent = data.spokenCaption;
       this.speakBtn.disabled = false;
+    }
+  }
+
+  private renderGuardrails(guardrails?: GuardrailRuleResult[]) {
+    if (!this.guardrailBadges) return;
+    this.guardrailBadges.innerHTML = '';
+
+    const labels: Record<string, string> = {
+      'identity-inference': 'No Identity Speculation',
+      'motive-inference': 'No Motive Guessing',
+      'single-present-tense-sentence': 'Single Present-Tense Sentence'
+    };
+
+    const rules = guardrails || [
+      { rule: 'identity-inference', pass: true, finding: null },
+      { rule: 'motive-inference', pass: true, finding: null },
+      { rule: 'single-present-tense-sentence', pass: true, finding: null }
+    ];
+
+    for (const r of rules) {
+      const pill = document.createElement('span');
+      if (r.pass) {
+        pill.className = 'guard-pill pass';
+        pill.textContent = labels[r.rule] || r.rule;
+      } else {
+        pill.className = 'guard-pill fail';
+        pill.textContent = r.finding || `${labels[r.rule] || r.rule}: Failed`;
+      }
+      this.guardrailBadges.appendChild(pill);
     }
   }
 

@@ -73,17 +73,38 @@ async function verify() {
     throw new Error(`FAIL: Audio is essentially silent! mean_volume = ${meanMatch[1]} dB`);
   }
 
-  // 3. Extract sample frames at key cues
-  console.log('\n--- 3. EXTRACTING SAMPLE FRAMES AT MID-CUES ---');
+  // 3. silencedetect (n=-45dB:d=4)
+  console.log('\n--- 3. FFMPEG SILENCEDETECT ANALYSIS (d=4s, -45dB) ---');
+  let silenceOutput = '';
+  try {
+    const proc = spawnSync('ffmpeg', ['-i', VIDEO_PATH, '-af', 'silencedetect=noise=-45dB:d=4', '-f', 'null', '-'], { encoding: 'utf-8' });
+    silenceOutput = (proc.stdout || '') + '\n' + (proc.stderr || '');
+  } catch (err) {
+    silenceOutput = (err.stdout || '') + '\n' + (err.stderr || '');
+  }
+
+  const silenceMatches = [...silenceOutput.matchAll(/silence_duration:\s+([-\d.]+)/g)];
+  console.log(`Silence gaps >= 4.0s: ${silenceMatches.length}`);
+  if (silenceMatches.length > 0) {
+    for (const m of silenceMatches) {
+      console.log(`  [Alert] Detected silence gap of ${m[1]}s`);
+    }
+    throw new Error(`FAIL: Audio contains silence gap >= 4.0s!`);
+  } else {
+    console.log('PASS: Zero silence gaps >= 4.0s detected.');
+  }
+
+  // 4. Extract sample frames at key cues
+  console.log('\n--- 4. EXTRACTING SAMPLE FRAMES AT MID-CUES ---');
   const checkTimes = [
     { t: 1.5, name: '01_opening_title_card' },
     { t: 12.0, name: '02_initial_surface_401_banner' },
     { t: 36.0, name: '03_step1_webhook_normalized' },
     { t: 65.0, name: '04_step2_watermark_crop_telemetry' },
-    { t: 90.0, name: '05_step3_novapro_c2pa_provenance' },
-    { t: 118.0, name: '06_step3_loud_refusal_pitch_black' },
-    { t: 145.0, name: '07_provenance_truth_overview' },
-    { t: 164.0, name: '08_closing_title_card' }
+    { t: 92.0, name: '05_step3_novapro_guardrail_amber_pill' },
+    { t: 120.0, name: '06_step3_loud_refusal_pitch_black' },
+    { t: 148.0, name: '07_provenance_truth_overview' },
+    { t: 166.0, name: '08_closing_title_card' }
   ];
 
   for (const item of checkTimes) {
