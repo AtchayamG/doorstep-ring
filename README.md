@@ -24,7 +24,9 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 
 | Component | Status | Verification Evidence |
 | :--- | :--- | :--- |
-| **Ring Partner API Gateway** | **Verified (Live Round Trip)** | Live HTTPS probe against `https://api.amazonvision.com/v1/devices` confirmed Envoy gateway (`server: envoy`, `x-request-id: 20dd8c90-b3b0-4fbc-9787-76cc27c6018a`, HTTP 401). |
+| **Ring Partner API** | **Verified (authenticated reads, 2026-09-14)** | Six endpoints returned **HTTP 200** with a real Developers Playground token: `/devices`, `/locations`, `/users/me`, and a device's `/capabilities`, `/status`, `/configurations` (`server: envoy`, distinct `x-request-id` per call, e.g. `d5791cac-8808-4824-aad8-1cf7486f1682`). The sandbox device is a Doorbell Pro reporting `online: true`. Full output: [`docs/00-research/ring-live-api-evidence.md`](docs/00-research/ring-live-api-evidence.md). |
+| **Event history** | **Blocked by scope, not by us** | `GET /devices/{id}/events` returns **403** on a Playground token, whose only scope is `ava.v1:read`. The route exists; the token cannot reach it. |
+| **Still-frame endpoint** | **Does not exist** | `/snapshot`, `/media` and `/recordings` all return **404**. Media is WebRTC: a `POST .../media/streaming/whep/sessions` with `Content-Type: application/sdp` returns **201 Created** and a session `Location`. Frame acquisition is a WHEP client, which this service does not yet implement — so it reads frames from disk, and says so. |
 | **Watermark Excision** | **Verified (Unit & Visual Tests)** | Slices top 15% rows (`134px` on 896p). Unit test `tests/watermark-crop.test.ts` proves 0% watermark pixels remain in model payload. |
 | **Bedrock Nova Pro Vision** | **Verified (Live AWS Inference)** | Multimodal inference via `@aws-sdk/client-bedrock-runtime` against `amazon.nova-pro-v1:0` in `us-east-1`. Generates concise 1-sentence descriptions. |
 | **Loud Refusal State** | **Verified (Unit & Live Tests)** | Pitch-black frame (< 3.0/255 luminance) triggers explicit `REFUSED` state, red banner, and refusal speech alert. No silent failures. |
