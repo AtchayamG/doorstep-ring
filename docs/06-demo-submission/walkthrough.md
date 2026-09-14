@@ -24,8 +24,9 @@ Doorstep is an intelligent accessibility pipeline designed for blind and low-vis
 **No frame in this demo came from a live Ring camera.**
 * **Why the demo runs on fixtures**: While authenticated testing against the Ring Developers Playground confirmed our Doorbell Pro is `online: true` across 6 discovery endpoints, probing revealed that the Ring Partner API provides **no REST snapshot endpoint** (HTTP 404 on `/snapshot`, `/media`, `/recordings`). Media acquisition is strictly WebRTC WHEP (`POST .../media/streaming/whep/sessions` returning HTTP 201 Created). Standing up a headless WebRTC peer connection to decode video tracks is a scoped Phase 2 milestone. Thus, running on deterministic local fixtures is an explicit engineering decision driven by API reality, ensuring offline test stability.
 * **Synthetic Test Fixtures**: The two photographic preset frames (`SYNTHETIC-ai-generated-porch-delivery.jpg` and `SYNTHETIC-ai-generated-driveway-vehicle.jpg`) are AI-generated test fixtures carrying signed Google C2PA Content Credentials (`c2pa.created: "Created by Google Generative AI"`, `digitalSourceType: trainedAlgorithmicMedia`, `c2pa.edited: "Applied imperceptible SynthID watermark."`).
-* **Visible Amber Provenance Strip**: The web interface explicitly displays prominent amber warning strips directly beneath synthetic input frames:
-  `Synthetic frame (C2PA content credentials present, trainedAlgorithmicMedia). Watermark zone simulated at top 15%.`
+* **Visible Amber Provenance Strip**: The web interface displays an amber strip directly beneath the input frame's label. On a synthetic frame it reads, verbatim:
+  `Frame source: AI-generated image (Google C2PA content credentials, digitalSourceType trainedAlgorithmicMedia, SynthID watermark applied). Not camera output.`
+  The label above it reads `Input Frame — SYNTHETIC, AI-GENERATED (Watermark Zone Boxed)`. Both strings are written from `SampleScenario.frameOrigin` in `apps/surface/src/main.ts`, not hard-coded per scenario.
 * **Sandbox Simulation Provenance**: The Developers Playground live-view stream itself plays a Creative Commons clip (*"Thief stealing our package" by YouTube user frollard, CC BY 4.0*), which carries third-party attribution requirements.
 * Full C2PA manifests, live API probe logs, and provenance analysis are documented in [`docs/00-research/fixture-media-provenance.md`](../00-research/fixture-media-provenance.md) and [`docs/00-research/ring-live-api-evidence.md`](../00-research/ring-live-api-evidence.md).
 
@@ -197,7 +198,7 @@ ops\start.cmd
 * **Step 1 (Webhook Event)**: JSON viewer displays the normalized payload with `data.attributes.sub_type: "human"`.
 * **Step 2 (Frame Acquisition & Watermark Excision)**:
   * Left pane: Displays the input frame with a red dashed overlay marking the top 15% watermark zone.
-  * An amber warning strip states: *"Synthetic frame (C2PA content credentials present, trainedAlgorithmicMedia). Watermark zone simulated at top 15%."*
+  * The pane label reads `Input Frame — SYNTHETIC, AI-GENERATED (Watermark Zone Boxed)`, and the amber strip beneath it reads, verbatim: `Frame source: AI-generated image (Google C2PA content credentials, digitalSourceType trainedAlgorithmicMedia, SynthID watermark applied). Not camera output.`
   * Right pane: Displays the cropped frame with the watermark cleanly excised.
   * Telemetry bar confirms: `Original: 1200x896`, `Inference: 1200x762`, `Rows Excluded: 134px (15%)`, `Watermark In Payload: EXCISED (0%)`.
 * **Step 3 (Bedrock Nova Pro)**:
