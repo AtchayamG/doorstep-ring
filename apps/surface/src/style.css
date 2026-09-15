@@ -8,7 +8,17 @@
 
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  /*
+   * Was #64748b (slate-500), which measured 3.02:1 on --bg-elevated and
+   * 3.43:1 on --bg-card - below the WCAG AA minimum of 4.5:1 for body text.
+   * On a submission whose entire purpose is describing a doorstep to blind and
+   * low-vision users, shipping sub-AA muted text is the wrong kind of irony.
+   * #94a3b8 (slate-400) is one step lighter in the same family, so the design
+   * language is unchanged, and clears AA on every background in this file
+   * (worst case 5.61:1 on --bg-elevated). Recompute with
+   * ops-tools/sweep-surfaces.mjs.
+   */
+  --text-muted: #94a3b8;
 
   --accent-blue: #2563eb;
   --accent-cyan: #06b6d4;
@@ -316,12 +326,20 @@ body {
   padding: 0.6rem 0.85rem;
   font-size: 0.9rem;
   font-family: var(--font-main);
-  outline: none;
   transition: border-color 0.2s ease;
 }
 
-.form-select:focus,
-.form-input:focus {
+/*
+ * `outline: none` used to sit on the rule above, with only a border-color
+ * change on :focus. A 1px border tint is not a focus indicator: a keyboard
+ * user tabbing through this surface could not see where they were. WCAG 2.4.7
+ * wants the focus visible, and 2.4.11 wants the indicator itself to carry
+ * contrast. Same defect was found and fixed in project 4's enrolment form.
+ */
+.form-select:focus-visible,
+.form-input:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
   border-color: var(--border-focus);
 }
 
