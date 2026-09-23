@@ -29,7 +29,7 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 | :--- | :--- | :--- |
 | **Ring Partner API** | **Verified (authenticated reads, 2026-09-14)** | Six endpoints returned **HTTP 200** with a real Developers Playground token: `/devices`, `/locations`, `/users/me`, and a device's `/capabilities`, `/status`, `/configurations` (`server: envoy`, distinct `x-request-id` per call, e.g. `d5791cac-8808-4824-aad8-1cf7486f1682`). The sandbox device is a Doorbell Pro reporting `online: true`. Full output: [`docs/00-research/ring-live-api-evidence.md`](docs/00-research/ring-live-api-evidence.md). |
 | **Event history** | **Blocked by scope, not by us** | `GET /devices/{id}/events` returns **403** on a Playground token, whose only scope is `ava.v1:read`. The route exists; the token cannot reach it. |
-| **Playground media** | **Negotiation verified; frame not yet received (2026-09-23)** | The documented `POST /devices/{id}/media/image/download` returned **303**; its signed download returned **416** for the latest image in the past 24 hours. `POST .../media/streaming/whep/sessions` returned **201**, `application/sdp`, an SDP answer, and a host ICE candidate. No Ring image was obtained. The earlier 404s were from different, nonexistent GET paths. |
+| **Playground media** | **Frame not yet received (2026-09-23)** | The documented image POST returned **303**; its signed download returned **416** for the latest image in the past 24 hours. A browser-generated WHEP offer returned **201** with an SDP answer and host ICE candidate. A separate capture-client offer returned **500**; its cause is not established. No Ring image was obtained. The earlier 404s were from different GET paths. |
 | **Watermark Excision** | **Verified (Unit & Visual Tests)** | Slices top 15% rows (`134px` on 896p). Unit test `tests/watermark-crop.test.ts` proves 0% watermark pixels remain in model payload. |
 | **Bedrock Nova Pro Vision** | **Verified (Live AWS Inference)** | Multimodal inference via `@aws-sdk/client-bedrock-runtime` against `amazon.nova-pro-v1:0` in `us-east-1`. Generates concise 1-sentence descriptions. |
 | **Loud Refusal State** | **Verified (Unit & Live Tests)** | Pitch-black frame (< 3.0/255 luminance) triggers explicit `REFUSED` state, red banner, and refusal speech alert. No silent failures. |
@@ -44,7 +44,8 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 **No frame in this demo came from a live Ring camera.** A Developers Playground
 token authenticated six discovery reads and, on 2026-09-23, the documented
 image-download POST returned 303 followed by a 416 download for the past 24
-hours. WHEP returned a 201 SDP answer, but no video frame has been received.
+hours. A browser-generated WHEP offer returned a 201 SDP answer; a separate
+capture-client offer returned 500. No video frame has been received.
 The older GET probes returned 404 because they targeted different paths.
 Every image the
 pipeline runs on is one of the following, and the web surface labels which one

@@ -106,15 +106,17 @@ Location: https://api.amazonvision.com/v1/devices/{deviceId}/media/streaming/whe
 
 Live frames arrive over WebRTC after an SDP offer/answer exchange. The image
 download route is separate and searches historical media; it is not a simple
-GET for a current live frame. On 2026-09-23 our WHEP probe returned 201 with an
-SDP answer and a host ICE candidate, but it did not receive a video frame.
-The descriptor service therefore still reads frames from disk.
+GET for a current live frame. On 2026-09-23 our browser-generated WHEP probe returned 201 with an
+SDP answer and a host ICE candidate, but it did not receive a video frame. A
+separate `werift` capture-client offer on the same date returned HTTP 500 after
+device discovery returned 200. The cause of the offer-specific difference is
+not yet established. The descriptor service therefore still reads frames from disk.
 
 We confirmed the stream plays: a 1280x720 track rendered in the Playground with
 the mandatory Ring watermark in the top-right corner and a `Front` camera label
 bottom-left — which is exactly the band
-`services/descriptor/src/watermark-cropper.ts` excises, now checked against a
-real Ring frame rather than only our procedural one.
+`services/descriptor/src/watermark-cropper.ts` is designed to excise. The cropper
+has not been checked against a captured Ring frame; its tests use fixtures.
 
 ### Amazon's own live-view footage is a licensed YouTube clip
 
