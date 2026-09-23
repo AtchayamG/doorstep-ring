@@ -79,13 +79,16 @@ ones this device does not have:
 | `GET /events` | 404 | No such route. |
 
 The 403/404 split matters: a 403 says "this exists and you may not", a 404 says
-"this is not the endpoint you think it is". There is **no REST route that
-returns a still frame**. That is the finding, and it is the reason the demo runs
-on fixtures.
+"this is not the endpoint you think it is". **Correction (2026-09-23):** those
+GET 404s did not test the [documented historical image-download POST](https://developer.amazon.com/docs/ring/api-documentation.html).
+Our `latest_in_range` request for the preceding 24 hours returned HTTP 303,
+then the signed download returned HTTP 416 (no media in that range). The earlier
+"no REST route" conclusion was incorrect. The published demo still runs on
+fixtures because no Ring image was obtained.
 
 ---
 
-## 3. Media is WebRTC, not a JPEG endpoint
+## 3. Live media is WHEP; historical image download is a separate POST
 
 The Playground's "Simulate live view event" offers three events — **Package**,
 **Vehicle**, **Motion** — and each starts a real WHEP session. Captured from
@@ -101,10 +104,11 @@ Content-Type: application/sdp
 Location: https://api.amazonvision.com/v1/devices/{deviceId}/media/streaming/whep/sessions/{sessionId}
 ```
 
-So frames arrive over WebRTC after an SDP offer/answer exchange. A client that
-wants a still has to establish the session and decode a track; there is nothing
-to `GET`. This is the honest shape of the integration, and it is why
-`services/descriptor` currently reads frames from disk.
+Live frames arrive over WebRTC after an SDP offer/answer exchange. The image
+download route is separate and searches historical media; it is not a simple
+GET for a current live frame. On 2026-09-23 our WHEP probe returned 201 with an
+SDP answer and a host ICE candidate, but it did not receive a video frame.
+The descriptor service therefore still reads frames from disk.
 
 We confirmed the stream plays: a 1280x720 track rendered in the Playground with
 the mandatory Ring watermark in the top-right corner and a `Front` camera label
@@ -135,12 +139,11 @@ deliver `<a download>` files to disk. A frame relayed as base64 through the
 automation channel arrived corrupted at a chunk boundary, and a corrupted
 fixture presented as a real Ring frame would be worse than no fixture at all.
 
-The correct fix is not a screenshot. It is for `services/descriptor` to
-implement the WHEP client above and pull its own frames, at which point
-`frameOrigin: 'ring-live'` becomes true by construction rather than by
-assertion — and the guard test in
+The correct fix is not a screenshot. It is to obtain and decode a frame through
+an authorized media route, then label its origin precisely (a Playground
+sandbox stream is not a customer camera). The guard test in
 `services/descriptor/tests/fixture-provenance.test.ts` already refuses to let
-any fixture claim that value.
+any disk fixture claim `ring-live`.
 
 ---
 
@@ -151,8 +154,10 @@ any fixture claim that value.
 2. `ava.v1:read` cannot read event history. Any design that assumed
    `/devices/{id}/events` needs a broader scope, which the Playground does not
    issue.
-3. There is no snapshot endpoint. Frame acquisition is a WHEP client, and that
-   is now a named, scoped piece of work rather than a vague gap.
+3. The official API documents historical image download via POST. In the
+   Playground test it returned 303 then 416 for the preceding 24 hours; WHEP
+   returned a 201 SDP answer. Neither yielded a frame. The earlier "no snapshot
+   endpoint" claim was wrong.
 4. The watermark band our cropper removes is confirmed present, in the expected
    corner, on a genuine Ring stream.
 5. No frame in this repository comes from a Ring camera. The two fixtures remain

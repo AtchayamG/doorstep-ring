@@ -22,7 +22,7 @@ Doorstep is an intelligent accessibility pipeline designed for blind and low-vis
 
 ### 3. Media Provenance & API Reality Disclosure
 **No frame in this demo came from a live Ring camera.**
-* **Why the demo runs on fixtures**: While authenticated testing against the Ring Developers Playground confirmed our Doorbell Pro is `online: true` across 6 discovery endpoints, probing revealed that the Ring Partner API provides **no REST snapshot endpoint** (HTTP 404 on `/snapshot`, `/media`, `/recordings`). Media acquisition is strictly WebRTC WHEP (`POST .../media/streaming/whep/sessions` returning HTTP 201 Created). Standing up a headless WebRTC peer connection to decode video tracks is a scoped Phase 2 milestone. Thus, running on deterministic local fixtures is an explicit engineering decision driven by API reality, ensuring offline test stability.
+* **Why the demo runs on fixtures**: The Playground confirmed the Doorbell Pro was `online: true` across six discovery endpoints. The documented `POST /media/image/download` was later tested (2026-09-23): it returned 303, then the signed download returned 416 for the past 24 hours. A WHEP session returned 201 and an SDP answer, but we have not received a video frame. Earlier 404s on `/snapshot`, `/media`, and `/recordings` were from different GET paths, not proof that no snapshot endpoint exists. The published demo therefore still uses declared fixtures.
 * **Synthetic Test Fixtures**: The two photographic preset frames (`SYNTHETIC-ai-generated-porch-delivery.jpg` and `SYNTHETIC-ai-generated-driveway-vehicle.jpg`) are AI-generated test fixtures carrying signed Google C2PA Content Credentials (`c2pa.created: "Created by Google Generative AI"`, `digitalSourceType: trainedAlgorithmicMedia`, `c2pa.edited: "Applied imperceptible SynthID watermark."`).
 * **Visible Amber Provenance Strip**: The web interface displays an amber strip directly beneath the input frame's label. On a synthetic frame it reads, verbatim:
   `Frame source: AI-generated image (Google C2PA content credentials, digitalSourceType trainedAlgorithmicMedia, SynthID watermark applied). Not camera output.`
@@ -163,8 +163,8 @@ When executed with a valid 30-minute Playground token (`ava.v1:read`), the API r
    * `GET /locations`, `GET /users/me`, `GET /devices/{id}/capabilities`, `GET /devices/{id}/configurations`.
 2. **HTTP 403 Forbidden on Events**:
    * `GET /devices/{id}/events` returns 403 Forbidden because `ava.v1:read` scope does not permit event history retrieval.
-3. **HTTP 404 Not Found on REST Snapshots**:
-   * `GET /devices/{id}/snapshot`, `/media`, and `/recordings` return 404. Media is exclusively available via WebRTC WHEP (`POST .../whep/sessions` -> 201 Created).
+3. **Documented image download and live WHEP are separate routes**:
+   * The earlier GET guesses (`/snapshot`, `/media`, `/recordings`) returned 404. The documented image POST returned 303; its signed download returned 416 for the last 24 hours. WHEP returned 201 with an SDP answer. Neither probe yielded a frame.
 4. **CC BY 4.0 Video Provenance**:
    * The Playground package video stream is `"Thief stealing our package" by YouTube user frollard, used under CC BY 4.0 / clipped from original`.
 

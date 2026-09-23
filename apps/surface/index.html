@@ -42,13 +42,10 @@
           <a href="https://developer.amazon.com/ring/console/playground" target="_blank" rel="noopener noreferrer" class="playground-link">
             https://developer.amazon.com/ring/console/playground ↗
           </a>
-          <div class="quick-token-input">
-            <input type="password" id="manual-token-input" placeholder="Paste 30-min Playground token here..." />
-            <button id="save-token-btn" class="btn btn-primary btn-sm">Set Token</button>
-          </div>
+          <span>For local API probes, use the secure PowerShell prompt in <code>ops/with-ring-token.ps1</code>.</span>
         </div>
         <div class="banner-note">
-          Notice: In expired/missing token state, live Ring API snapshots are honestly blocked (HTTP 401). No canned live responses are fabricated.
+          Notice: An expired or missing token blocks new Ring API requests. Saved Playground captures, if any, are explicitly labelled; otherwise the demo uses declared fixtures.
         </div>
       </div>
     </div>
@@ -71,6 +68,7 @@
               <option value="vehicle_driveway">Car in Driveway (motion: vehicle) — SYNTHETIC, AI-generated frame</option>
               <option value="doorbell_chime_press">Doorbell Button Pressed (button_press / ding) — procedurally drawn frame</option>
               <option value="pitch_black_unusable">Pitch Black Frame (Loud Refusal Test) — procedurally drawn frame</option>
+              <option value="ring_playground_whep">Ring Playground WHEP sandbox capture — falls back to labelled AI fixture if unavailable</option>
             </select>
           </div>
 

@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('probe-ring-whep.mjs', 'verify-ring-api.mjs')]
+    [ValidateSet('probe-ring-whep.mjs', 'verify-ring-api.mjs', 'capture-ring-whep.mjs')]
     [string]$Script
 )
 

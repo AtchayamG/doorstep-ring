@@ -14,7 +14,7 @@ Doorstep transforms Ring smart doorbell and camera events into objective, spoken
 
 When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 1. Normalizes the webhook event schema using official Ring Partner API metadata (`data.attributes.sub_type`: `human`, `vehicle`, `motion`, etc.).
-2. Reads the frame for that event. Ring exposes camera media only as a live WebRTC stream (WHEP) — there is no still-snapshot endpoint — and this service does not yet run a WHEP client, so today the frame comes from disk and is labelled as such on screen (see *Where the demo frames come from*).
+2. Reads the frame for that event. Ring documents both a historical image-download endpoint and a live WebRTC stream (WHEP). The Playground image request reached the documented redirect but found no stored image in the last 24 hours (HTTP 416); WHEP returned an SDP answer, but this service has not yet received a frame. Today the frame comes from disk and is labelled as such on screen (see *Where the demo frames come from*).
 3. **Excises the server-side watermark overlay** (top 15% band containing Ring logo, Device ID, and timestamp per the June 8, 2026 Ring API specification) so model vision is not polluted by on-screen text.
 4. Performs multimodal inference via **Amazon Bedrock Nova Pro** (`amazon.nova-pro-v1:0` in `us-east-1`) under strict accessibility guardrails (single factual sentence, present tense, zero identity speculation, zero motive guessing).
 5. Enforces **loud and visible refusals** on unusable inputs (pitch-black unlit frames, corrupted feeds, or model refusal) rather than polite or deceptive fallbacks.
@@ -29,7 +29,7 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 | :--- | :--- | :--- |
 | **Ring Partner API** | **Verified (authenticated reads, 2026-09-14)** | Six endpoints returned **HTTP 200** with a real Developers Playground token: `/devices`, `/locations`, `/users/me`, and a device's `/capabilities`, `/status`, `/configurations` (`server: envoy`, distinct `x-request-id` per call, e.g. `d5791cac-8808-4824-aad8-1cf7486f1682`). The sandbox device is a Doorbell Pro reporting `online: true`. Full output: [`docs/00-research/ring-live-api-evidence.md`](docs/00-research/ring-live-api-evidence.md). |
 | **Event history** | **Blocked by scope, not by us** | `GET /devices/{id}/events` returns **403** on a Playground token, whose only scope is `ava.v1:read`. The route exists; the token cannot reach it. |
-| **Still-frame endpoint** | **Does not exist** | `/snapshot`, `/media` and `/recordings` all return **404**. Media is WebRTC: a `POST .../media/streaming/whep/sessions` with `Content-Type: application/sdp` returns **201 Created** and a session `Location`. Frame acquisition is a WHEP client, which this service does not yet implement — so it reads frames from disk, and says so. |
+| **Playground media** | **Negotiation verified; frame not yet received (2026-09-23)** | The documented `POST /devices/{id}/media/image/download` returned **303**; its signed download returned **416** for the latest image in the past 24 hours. `POST .../media/streaming/whep/sessions` returned **201**, `application/sdp`, an SDP answer, and a host ICE candidate. No Ring image was obtained. The earlier 404s were from different, nonexistent GET paths. |
 | **Watermark Excision** | **Verified (Unit & Visual Tests)** | Slices top 15% rows (`134px` on 896p). Unit test `tests/watermark-crop.test.ts` proves 0% watermark pixels remain in model payload. |
 | **Bedrock Nova Pro Vision** | **Verified (Live AWS Inference)** | Multimodal inference via `@aws-sdk/client-bedrock-runtime` against `amazon.nova-pro-v1:0` in `us-east-1`. Generates concise 1-sentence descriptions. |
 | **Loud Refusal State** | **Verified (Unit & Live Tests)** | Pitch-black frame (< 3.0/255 luminance) triggers explicit `REFUSED` state, red banner, and refusal speech alert. No silent failures. |
@@ -41,11 +41,12 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 
 ## Where the demo frames come from
 
-**No frame in this demo came from a live Ring camera.** Not for want of a token:
-a Developers Playground token did authenticate six real Ring API reads (table
-above). The reason is that Ring has no still-frame endpoint — `/snapshot`,
-`/media` and `/recordings` all return 404 — and camera media is WebRTC only,
-which this service does not yet implement. Every image the
+**No frame in this demo came from a live Ring camera.** A Developers Playground
+token authenticated six discovery reads and, on 2026-09-23, the documented
+image-download POST returned 303 followed by a 416 download for the past 24
+hours. WHEP returned a 201 SDP answer, but no video frame has been received.
+The older GET probes returned 404 because they targeted different paths.
+Every image the
 pipeline runs on is one of the following, and the web surface labels which one
 it is on screen, next to the image, on every run.
 

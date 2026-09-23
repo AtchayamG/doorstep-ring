@@ -24,6 +24,12 @@ const fail = (msg) => {
 
 console.log(`=== GET ${BASE}/api/samples ===`);
 const samples = await (await fetch(`${BASE}/api/samples`)).json();
+const playground = samples.scenarios.find((s) => s.id === 'ring_playground_whep');
+if (!playground || !['ring-playground-whep', 'ai-generated'].includes(playground.frameOrigin)) {
+  fail('Playground scenario must declare a sandbox capture or fixture fallback');
+} else {
+  EXPECTED.ring_playground_whep = playground.frameOrigin;
+}
 for (const s of samples.scenarios) {
   console.log(`  ${String(s.frameOrigin).padEnd(14)} ${s.id.padEnd(24)} ${s.name}`);
   if (EXPECTED[s.id] && s.frameOrigin !== EXPECTED[s.id]) {

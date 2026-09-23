@@ -41,7 +41,7 @@ interface PipelineResponse {
   };
   modelId: string;
   totalLatencyMs: number;
-  frameOrigin?: 'ai-generated' | 'procedural' | 'ring-live' | 'user-upload';
+  frameOrigin?: 'ai-generated' | 'procedural' | 'ring-live' | 'ring-playground-whep' | 'user-upload';
   guardrails?: GuardrailRuleResult[];
   tokenInfo?: {
     playgroundUrl: string;
@@ -93,8 +93,6 @@ class DoorstepApp {
   private stopSpeechBtn = document.getElementById('stop-speech-btn') as HTMLButtonElement;
   private voiceSelect = document.getElementById('voice-select') as HTMLSelectElement;
 
-  private manualTokenInput = document.getElementById('manual-token-input') as HTMLInputElement;
-  private saveTokenBtn = document.getElementById('save-token-btn') as HTMLButtonElement;
 
   private customImageBase64: string | null = null;
   private synth: SpeechSynthesis = window.speechSynthesis;
@@ -171,16 +169,6 @@ class DoorstepApp {
     this.speakBtn.addEventListener('click', () => this.speakCaption());
     this.stopSpeechBtn.addEventListener('click', () => this.stopSpeaking());
 
-    // Manual token entry
-    this.saveTokenBtn.addEventListener('click', async () => {
-      const token = this.manualTokenInput.value.trim();
-      if (!token) return;
-      this.tokenStatusBadge.className = 'status-pill checking';
-      this.tokenStatusBadge.innerHTML = '<span class="status-dot"></span><span class="status-text">Validating...</span>';
-      // Store in session and re-check
-      sessionStorage.setItem('ring_token', token);
-      await this.checkStatus();
-    });
   }
 
   private initVoices() {
@@ -305,6 +293,11 @@ class DoorstepApp {
       'ring-live': {
         label: 'Input Frame — LIVE RING CAMERA (Watermark Zone Boxed)',
         note: 'Frame source: fetched from a Ring device over the Ring Partner API.',
+        cls: 'frame-origin-note origin-live'
+      },
+      'ring-playground-whep': {
+        label: 'Input Frame — Ring Playground WHEP sandbox (Watermark Zone Boxed)',
+        note: 'Frame source: captured from the Ring Playground sandbox stream. Not a customer camera.',
         cls: 'frame-origin-note origin-live'
       }
     };

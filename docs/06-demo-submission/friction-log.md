@@ -18,13 +18,13 @@
 
 ---
 
-### Entry 2: Complete Absence of REST Still-Frame Endpoint (Forces WebRTC WHEP Client for a Single Frame)
-* **Task Attempted**: Fetching a single camera still frame (JPEG/PNG) via a simple HTTP GET request to pass to Bedrock Nova Pro upon receiving a doorbell or motion event.
-* **Steps Taken**: Probed standard REST media paths (`GET /devices/{id}/snapshot`, `GET /devices/{id}/media`, `GET /devices/{id}/recordings`, `GET /events`) with a valid sandbox token.
-* **Expected vs Actual**: Expected a lightweight REST snapshot endpoint returning an image buffer. Instead, every candidate REST snapshot route returned **HTTP 404 Not Found** (`server: envoy`). Live network inspection revealed that the only media route Ring provides is WebRTC WHEP (`POST /devices/{id}/media/streaming/whep/sessions` with `Content-Type: application/sdp`), returning HTTP 201 Created. An accessibility service that needs exactly one still frame to describe who is at the door cannot issue a standard HTTP GET; it must stand up a complete WebRTC peer connection, negotiate SDP offers/answers, handle ICE trickle candidates, decode the RTP video track, and grab a canvas frame.
-* **Severity**: High (drastically increases architectural complexity and latency for lightweight computer vision and AI integrations).
-* **Workaround**: Isolated and documented the WHEP session negotiation in `docs/00-research/ring-live-api-evidence.md`. Phase 1 uses local image fixtures for offline verification while scoping the standalone WHEP client for Phase 2.
-* **Suggested Fix**: Introduce a lightweight REST endpoint: `GET /devices/{id}/snapshot` (or `GET /devices/{id}/latest-frame`) returning `image/jpeg` with standard cache headers for AI/CV developers who do not require a live video stream.
+### Entry 2: Snapshot Discovery Error and No Stored Playground Image in the Tested Window
+* **Task Attempted**: Fetching one camera image (JPEG/PNG) to pass to Bedrock Nova Pro after a doorbell or motion event.
+* **Steps Taken**: Initially probed guessed GET paths (`/devices/{id}/snapshot`, `/media`, `/recordings`, `/events`), which returned 404. Re-read the [official image-snapshot documentation](https://developer.amazon.com/docs/ring/api-documentation.html) and tested its actual `POST /devices/{id}/media/image/download` using `latest_in_range` for the preceding 24 hours on 2026-09-23. In the same token session, probed WHEP with a generated video-only SDP offer.
+* **Expected vs Actual**: The documented image POST returned **HTTP 303**; its signed download returned **HTTP 416**, which Ring documents as no media in the requested range. WHEP returned **HTTP 201** with an SDP answer and a host ICE candidate. Neither produced an image. The earlier assertion that Ring has no snapshot endpoint was incorrect: those 404s were for different GET paths. This probe does not establish whether the Playground permits image download when stored media exists.
+* **Severity**: Medium (the historical snapshot route needs stored media; it did not supply an on-demand frame in this test).
+* **Workaround**: Keep the currently published demo on explicitly labelled fixtures. WHEP session negotiation is verified, but frame receipt is not yet implemented or claimed.
+* **Suggested Fix**: Provide a documented Playground image with a known timestamp or an on-demand live-frame endpoint for single-frame AI/CV testing, distinct from historical image download.
 
 ---
 
@@ -49,9 +49,9 @@
 ---
 
 ### Entry 5: Mandatory Server-Side Watermark Text Contaminates Multimodal Vision Models
-* **Task Attempted**: Passing full-frame camera snapshots directly to Bedrock Nova Pro (`amazon.nova-pro-v1:0`) for objective scene description.
-* **Steps Taken**: Extracted raw snapshot buffers from the API feed and forwarded them to Nova Pro via `@aws-sdk/client-bedrock-runtime`.
-* **Expected vs Actual**: Expected the vision model to describe physical porch events (e.g. visitors, packages). Instead, because Ring burns in a server-side watermark containing the Ring logo (top-left) and Device ID, App Name, and timestamp (top-right) per the June 8, 2026 release note, Nova Pro described the on-screen text: *"White text on dark background credits..."* or *"Timestamp and camera identifier at top of frame"*. A blind accessibility user would be read technical on-screen overlays instead of what is on their doorstep.
+* **Task Attempted**: Preparing image inputs for Bedrock Nova Pro (`amazon.nova-pro-v1:0`) without letting a visible watermark contaminate the description.
+* **Steps Taken**: Read Ring's June 8, 2026 watermark specification and tested the cropper on declared local fixtures. No Ring frame was sent to Nova Pro in the published demo.
+* **Expected vs Actual**: The documented server-side watermark contains the Ring logo (top-left) and Device ID, App Name, and timestamp (top-right). Such text could contaminate a vision description. The repository verifies that its cropper excludes the top band, but has not yet measured the model's response to an actual Ring frame.
 * **Severity**: High (degrades accessibility descriptions and wastes model token budget).
 * **Workaround**: Built `services/descriptor/src/watermark-cropper.ts` in pure JavaScript (`pngjs` + `jpeg-js`). The cropper detects frame resolution and slices off the top 15% rows (e.g. exactly 134 pixels on 896p frames: 1200x896 -> 1200x762; 72 pixels on 480p frames: 640x480 -> 640x408) prior to inference. Unit test `tests/watermark-crop.test.ts` asserts that 0% of the watermark signature pixels reach the inference payload.
 * **Suggested Fix**: Ring Partner API should provide an API parameter (or clean stream channel) for certified accessibility/vision integrations that delivers the raw sensor frame without server-side text burning, or place watermark overlays outside the active camera aspect ratio.
@@ -73,7 +73,7 @@
 * **Steps Taken**: Inspected Ring webhook payloads (`motion_detected`) and reviewed the official sample repository `github.com/AmazonAppDev/ring-api-helloworld`.
 * **Expected vs Actual**: Expected Ring's internal computer vision models to expose object bounding boxes or classified labels in the webhook payload. In reality, the API delivers only a coarse string under `data.attributes.sub_type` (`human`, `vehicle`, `motion`, `animal`, `other_motion`). Even Amazon's official sample app has to bundle Google MediaPipe running in client-side Next.js to perform hand tracking, because Ring provides zero computer vision annotations.
 * **Severity**: Medium.
-* **Workaround**: Built a custom multimodal pipeline connecting the Ring snapshot endpoint to AWS Bedrock Nova Pro (`amazon.nova-pro-v1:0`) with strict prompt guardrails (1 sentence, present tense, zero identity/motive speculation).
+* **Workaround**: Built a multimodal pipeline that currently uses clearly labelled local fixtures with AWS Bedrock Nova Pro (`amazon.nova-pro-v1:0`) and prompt guardrails (1 sentence, present tense, zero identity/motive speculation). A live Ring image has not yet entered the pipeline.
 * **Suggested Fix**: Expose Ring's server-side object detection metadata (bounding box coordinates, detection confidence, primary subject classification) directly in webhook payloads under `data.attributes.detections[]`.
 
 ---
@@ -103,7 +103,7 @@
 | Entry # | Issue Summary | Reproduction Command or Source URL |
 | :--- | :--- | :--- |
 | **Entry 1** | Sandbox `ava.v1:read` returns 403 on `/events` | `GET https://api.amazonvision.com/v1/devices/{id}/events` (documented in `docs/00-research/ring-live-api-evidence.md`) |
-| **Entry 2** | No REST Snapshot Endpoint (404s; WHEP only) | `GET https://api.amazonvision.com/v1/devices/{id}/snapshot` (documented in `docs/00-research/ring-live-api-evidence.md`) |
+| **Entry 2** | Snapshot POST 303; signed download 416 for past 24 hours | `POST /v1/devices/{id}/media/image/download` — [official Ring reference](https://developer.amazon.com/docs/ring/api-documentation.html); status-only probe in `ops/probe-ring-whep.mjs` |
 | **Entry 3** | CC BY 4.0 YouTube Video in Sandbox Live View | Developers Playground Package stream inspection; YouTube user `frollard` ("Thief stealing our package") |
 | **Entry 4** | Ring 401 Empty Body & 30-Min Expiry | `cmd.exe /c "ops\verify-ring-api.cmd"` and `https://developer.amazon.com/docs/ring/release-notes.html#may-28-2026` |
 | **Entry 5** | Watermark Contamination (134px / 15% Crop) | `cmd.exe /c "ops\test.cmd"` (test: `Watermark Cropper: Excludes top watermark band`) and `https://developer.amazon.com/docs/ring/release-notes.html#june-8-2026` |

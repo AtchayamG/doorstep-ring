@@ -16,7 +16,7 @@
   * **Active Live View Simulation**: The sandbox initiates real WebRTC WHEP sessions (`POST /devices/{id}/media/streaming/whep/sessions` returning HTTP 201 Created) for Package, Vehicle, and Motion event types.
 * **What Needs Improvement**:
   * **Sandbox Scope (`ava.v1:read`) Blocked on Events (HTTP 403 Forbidden)**: `GET /devices/{id}/events` returned HTTP 403 Forbidden under the only token scope issued by the Playground (`ava.v1:read`). Even though the Doorbell Pro reports `online: true`, developers building event-driven accessibility applications cannot test real event polling or history against the sandbox device.
-  * **Absence of a Lightweight REST Snapshot Endpoint (HTTP 404 on All Candidate Routes)**: Probing `GET /devices/{id}/snapshot`, `/media`, and `/recordings` returned HTTP 404 Not Found. Ring provides exclusively a WebRTC WHEP stream (`POST .../whep/sessions`). Accessibility pipelines requiring only a single still frame per event are forced to build a full WebRTC peer connection, negotiate SDP offers/answers, handle ICE trickle candidates, and decode an RTP video track, rather than making a simple HTTP GET.
+  * **Historical Snapshot Access in the Playground**: The [documented](https://developer.amazon.com/docs/ring/api-documentation.html) `POST /devices/{id}/media/image/download` exists. Our 2026-09-23 Playground request returned HTTP 303, but its signed download returned 416 for the latest image in the past 24 hours. The earlier 404s came from guessed GET paths and did not prove endpoint absence. The test did not yield a still for this accessibility pipeline; WHEP negotiation separately returned 201 with an SDP answer, but no frame was received.
   * **Undocumented CC BY 4.0 Third-Party Footage in Live View Simulation**: The sandbox video stream is a licensed Creative Commons clip (*"Thief stealing our package" by YouTube user frollard, CC BY 4.0 / clipped from original*). This attribution requirement is absent from the API documentation and portal guides, creating unexpected copyright compliance obligations for developers capturing frames for training datasets, test fixtures, or public demos.
   * **30-Minute Token Lifespan & Silent 401 Body**: Sandboxed tokens expire in 30 minutes without warning, and the API gateway returns HTTP 401 with `server: envoy` and an entirely empty response body (`(empty body)`). Developers are left guessing why a previously working script failed.
   * **Mandatory Server-Side Watermark**: Burning text (Ring logo, Device ID, timestamp) into media frames per the June 8, 2026 release note contaminates downstream multimodal AI models, forcing developers to build custom crop pipelines.
@@ -24,7 +24,7 @@
 * **Onboarding Experience**: Smooth in the console itself, but the relationship between consumer End-to-End Encryption (TAKE) and partner API scopes is ambiguous across documentation portals.
 * **Testing**: Good interactive curl explorer in the Playground, but lacks an automated local webhook forwarding agent.
 * **Reliability**: Envoy proxy gateway demonstrated sub-300ms response times and 100% uptime throughout testing.
-* **Would You Build With It Again?**: Yes. The presence of a software sandbox makes the Ring Track viable for remote developers, but opening `/events` and offering a snapshot endpoint would reduce integration time by 80%.
+* **Would You Build With It Again?**: Yes. The software sandbox makes the Ring Track viable for remote developers; accessible event history and a reproducible Playground snapshot would improve single-frame testing. The earlier suggestion to add a snapshot endpoint was based on incorrect GET probes.
 
 ---
 
@@ -128,9 +128,9 @@
 1. **Ring Partner API — Unblock Sandbox Events (`ava.v1:read`) or Provide Event Mocking**:
    * *Problem*: `GET /devices/{id}/events` returns HTTP 403 Forbidden under the only scope issued by the Developers Playground (`ava.v1:read`). Developers cannot test event-driven pipelines against the online sandbox device.
    * *Proposed Solution*: Allow `ava.v1:read` to access `GET /devices/{id}/events` in the sandbox environment, or add a "Trigger Test Event" button in the Developers Playground that generates simulated event records.
-2. **Ring Partner API — Lightweight REST Snapshot Endpoint (`GET /snapshot`)**:
-   * *Problem*: All REST media endpoints return 404; media acquisition requires a full WebRTC WHEP negotiation (`POST .../whep/sessions`). Single-frame AI/CV consumers should not be forced into WebRTC session management.
-   * *Proposed Solution*: Provide an authenticated `GET /devices/{id}/snapshot` (or `/latest-frame`) endpoint returning `image/jpeg` with caching headers.
+2. **Ring Partner API — Reproducible Playground Snapshot**:
+   * *Problem*: The documented historical image-download POST returned 303, then its signed download returned 416 for the latest image in the preceding 24 hours. That proves the route is documented and reachable, but it did not provide a frame for this sandbox test.
+   * *Proposed Solution*: Supply a Playground snapshot with a known timestamp or a clearly documented way to create stored test media for the image-download endpoint.
 3. **Ring Partner API — Informative JSON Response on 401**:
    * *Problem*: Expired or missing sandbox tokens return HTTP 401 with an empty body (`(empty body)`).
    * *Proposed Solution*: Return a structured payload: `{"error": "unauthorized", "message": "Playground sandbox token expired after 30 minutes", "playground_url": "https://developer.amazon.com/ring/console/playground"}`.

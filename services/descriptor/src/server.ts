@@ -8,9 +8,11 @@ import { RingPartnerClient } from './ring-client.js';
 import { executeDoorstepPipeline, RingWebhookPayload } from './event-pipeline.js';
 import { SAMPLE_SCENARIOS } from './sample-frames.js';
 import { auditDescription, GuardrailAudit } from './guardrail-audit.js';
+import { getPlaygroundFrame } from './playground-frame.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const playgroundFramePath = path.resolve(__dirname, '../../../ops/captures/ring-playground-whep.jpg');
 
 export function createServer() {
   const app = express();
@@ -77,7 +79,21 @@ export function createServer() {
 
       if (scenarioId) {
         const scenario = SAMPLE_SCENARIOS.find((s) => s.id === scenarioId);
-        if (scenario) {
+        if (scenarioId === 'ring_playground_whep') {
+          const fixture = SAMPLE_SCENARIOS.find((s) => s.id === 'person_porch_package')!;
+          const frame = await getPlaygroundFrame(
+            async () => {
+              const buffer = await fs.promises.readFile(playgroundFramePath);
+              if (buffer[0] !== 0xff || buffer[1] !== 0xd8) throw new Error('Not JPEG');
+              return buffer;
+            },
+            fixture.generateImage
+          );
+          imageBuffer = frame.buffer;
+          frameOrigin = frame.frameOrigin;
+          effectiveEventType = fixture.eventType;
+          effectiveSubType = fixture.subType;
+        } else if (scenario) {
           imageBuffer = scenario.generateImage();
           effectiveEventType = scenario.eventType;
           effectiveSubType = scenario.subType;
@@ -113,7 +129,7 @@ export function createServer() {
   // Available sample scenarios for testing and demonstration
   app.get('/api/samples', (_req: Request, res: Response) => {
     res.json({
-      scenarios: SAMPLE_SCENARIOS.map((s) => ({
+      scenarios: [...SAMPLE_SCENARIOS.map((s) => ({
         id: s.id,
         name: s.name,
         eventType: s.eventType,
@@ -121,7 +137,15 @@ export function createServer() {
         descriptionHint: s.descriptionHint,
         isBlackout: s.isBlackout ?? false,
         frameOrigin: s.frameOrigin ?? 'procedural'
-      }))
+      })), {
+        id: 'ring_playground_whep',
+        name: 'Ring Playground WHEP sandbox capture (fixture fallback)',
+        eventType: 'motion_detected',
+        subType: 'human',
+        descriptionHint: 'Captured sandbox frame if present; otherwise declared AI fixture',
+        isBlackout: false,
+        frameOrigin: fs.existsSync(playgroundFramePath) ? 'ring-playground-whep' : 'ai-generated'
+      }]
     });
   });
 

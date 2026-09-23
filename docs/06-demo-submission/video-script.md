@@ -20,7 +20,7 @@
 | **3** | `watermark_excision`| Scroll to Step 2. Input frame (15% boxed zone) vs cropped frame. Telemetry bar (134px / 15% excised). | 30.50s | 0:47 – 0:78 |
 | **4** | `nova_pro_guardrail_audit`| Scroll to Step 3 & 4. Green `DESCRIBED` badge, amber `Identity inference: 'man'` pill, green motive/tense pills, spoken caption. | 29.18s | 0:78 – 1:07 |
 | **5** | `loud_refusal` | Select `Pitch Black Frame (Loud Refusal Test)`. Click execute. Crimson `🛑 LOUD REFUSAL TRIGGERED` banner (0.0/255 lux). | 22.82s | 1:07 – 1:31 |
-| **6** | `truth_in_advertising`| Overview of interface, amber C2PA warning strip, and live Ring API probe reality (6x 200s, no REST snapshot, WHEP roadmap). | 30.41s | 1:31 – 2:42 |
+| **6** | `truth_in_advertising`| Published cut: overview and amber C2PA strip. Its "no REST snapshot" claim is superseded by the 2026-09-23 correction below. | 30.41s | 1:31 – 2:42 |
 | **7** | `closing_card` | Closing title card with project name, hackathon track, credits, and Edge TTS narration disclosure. | 6.70s | 2:42 – 2:51 |
 
 ---
@@ -63,7 +63,7 @@
 ---
 
 ### Segment 6: Truth in Advertising — Provenance & API Reality (1:31 – 2:42)
-> *"Finally, complete transparency on what is real. No frame came from a live Ring camera. Our photographic fixtures are AI-generated test frames with signed Google C2PA credentials, declared in the amber warning strip. While testing against the Ring Playground proved six authenticated endpoints return 200, Ring provides no REST snapshot endpoint. Live frame capture requires WebRTC WHEP, scoped for Phase 2."*
+> *Correction to the published narration (the uploaded video itself is unchanged): No frame in that demo came from a Ring camera; the photographic fixtures are AI-generated and declared on screen. Ring does document a historical image-download POST. On 2026-09-23 the Playground request returned 303 and its signed download returned 416 for the preceding 24 hours. WHEP returned 201 with an SDP answer, but no frame was received. The narration's claim that no REST snapshot endpoint exists is wrong.*
 
 * **On-Screen Action**: Interface overview highlighting the amber provenance badges, honest status pills, and verified architecture.
 

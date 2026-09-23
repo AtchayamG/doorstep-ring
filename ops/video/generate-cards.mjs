@@ -136,7 +136,7 @@ async function renderCards() {
     <div class="provenance-box">
       <strong>Media Provenance & API Reality:</strong><br>
       • Ring Developers Playground: 6 authenticated endpoints return HTTP 200 (Doorbell Pro online).<br>
-      • REST Snapshot Endpoint: None exists (WebRTC WHEP stream only; WHEP client scoped for Phase 2).<br>
+      • Image download: documented POST; Playground probe returned 303 then 416 (no stored image in the last 24 hours). WHEP returned a 201 SDP answer; no frame received. WHEP client scoped for Phase 2 pending frame capture.<br>
       • Test Media: Explicitly disclosed AI-generated fixtures with signed Google C2PA Content Credentials.
     </div>
     <div class="footer-row">
