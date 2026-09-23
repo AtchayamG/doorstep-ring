@@ -21,8 +21,8 @@ Doorstep is an intelligent accessibility pipeline designed for blind and low-vis
 4. **Honest Token Absence Transparency**: When the 30-minute Developers Playground sandbox token is expired or absent, the UI displays an honest warning banner linking directly to `https://developer.amazon.com/ring/console/playground` and suppresses live transcripts. No canned live responses are fabricated.
 
 ### 3. Media Provenance & API Reality Disclosure
-**No frame in this demo came from a live Ring camera.**
-* **Why the demo runs on fixtures**: The Playground confirmed the Doorbell Pro was `online: true` across six discovery endpoints. The documented `POST /media/image/download` was later tested (2026-09-23): it returned 303, then the signed download returned 416 for the past 24 hours. A WHEP session returned 201 and an SDP answer, but we have not received a video frame. Earlier 404s on `/snapshot`, `/media`, and `/recordings` were from different GET paths, not proof that no snapshot endpoint exists. The published demo therefore still uses declared fixtures.
+**No frame in the demo video came from a live Ring camera.** Since the video was recorded, one real frame has come from the Ring Developers Playground sandbox stream over WHEP (2026-09-23); see the README section *Where the demo frames come from*.
+* **Why the demo runs on fixtures**: The Playground confirmed the Doorbell Pro was `online: true` across six discovery endpoints. The documented `POST /media/image/download` was later tested (2026-09-23): it returned 303, then the signed download returned 416 for the past 24 hours. A WHEP session returned 201 and an SDP answer, and a browser-built offer later delivered one 1280x720 frame. Earlier 404s on `/snapshot`, `/media`, and `/recordings` were from different GET paths, not proof that no snapshot endpoint exists. The published demo therefore still uses declared fixtures.
 * **Synthetic Test Fixtures**: The two photographic preset frames (`SYNTHETIC-ai-generated-porch-delivery.jpg` and `SYNTHETIC-ai-generated-driveway-vehicle.jpg`) are AI-generated test fixtures carrying signed Google C2PA Content Credentials (`c2pa.created: "Created by Google Generative AI"`, `digitalSourceType: trainedAlgorithmicMedia`, `c2pa.edited: "Applied imperceptible SynthID watermark."`).
 * **Visible Amber Provenance Strip**: The web interface displays an amber strip directly beneath the input frame's label. On a synthetic frame it reads, verbatim:
   `Frame source: AI-generated image (Google C2PA content credentials, digitalSourceType trainedAlgorithmicMedia, SynthID watermark applied). Not camera output.`
@@ -164,7 +164,7 @@ When executed with a valid 30-minute Playground token (`ava.v1:read`), the API r
 2. **HTTP 403 Forbidden on Events**:
    * `GET /devices/{id}/events` returns 403 Forbidden because `ava.v1:read` scope does not permit event history retrieval.
 3. **Documented image download and live WHEP are separate routes**:
-   * The earlier GET guesses (`/snapshot`, `/media`, `/recordings`) returned 404. The documented image POST returned 303; its signed download returned 416 for the last 24 hours. WHEP returned 201 with an SDP answer. Neither probe yielded a frame.
+   * The earlier GET guesses (`/snapshot`, `/media`, `/recordings`) returned 404. The documented image POST returned 303; its signed download returned 416 for the last 24 hours. WHEP returned 201 with an SDP answer, and `ops/capture-ring-browser.mjs` received one frame from it (2026-09-23).
 4. **CC BY 4.0 Video Provenance**:
    * The Playground package video stream is `"Thief stealing our package" by YouTube user frollard, used under CC BY 4.0 / clipped from original`.
 

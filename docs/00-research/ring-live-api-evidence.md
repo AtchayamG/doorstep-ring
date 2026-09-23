@@ -106,17 +106,35 @@ Location: https://api.amazonvision.com/v1/devices/{deviceId}/media/streaming/whe
 
 Live frames arrive over WebRTC after an SDP offer/answer exchange. The image
 download route is separate and searches historical media; it is not a simple
-GET for a current live frame. On 2026-09-23 our browser-generated WHEP probe returned 201 with an
-SDP answer and a host ICE candidate, but it did not receive a video frame. A
-separate `werift` capture-client offer on the same date returned HTTP 500 after
-device discovery returned 200. The cause of the offer-specific difference is
-not yet established. The descriptor service therefore still reads frames from disk.
+GET for a current live frame.
+
+**A frame was received on 2026-09-23** with `ops/capture-ring-browser.mjs` (headless Chrome is the
+WebRTC peer; the token stays in Node). Status-only output:
+
+```text
+Device list HTTP: 200
+WHEP session HTTP: 201
+Negotiated codec (answer): H264 64001f
+Decoded frames: 15; ICE: connected; codec (stats): video/H264
+Frame: 1280x720; luma mean 122, std 46; blank: false
+Captured JPEG: ops/captures/ring-playground-whep.jpg (156133 bytes)
+WHEP session close HTTP: 200
+```
+
+The `werift` capture client's offer on the same date got **HTTP 500**. Its offer lists VP8 and a
+single H264 profile (`42e01f`). Chrome's offer lists every H264 profile, including `64001f`, which
+is the one the Playground answered with. Our reading is that the server could not match its
+stream to the shorter list, and it answered 500 rather than a 4xx. We have not confirmed this
+with Ring.
 
 We confirmed the stream plays: a 1280x720 track rendered in the Playground with
 the mandatory Ring watermark in the top-right corner and a `Front` camera label
 bottom-left — which is exactly the band
 `services/descriptor/src/watermark-cropper.ts` is designed to excise. The cropper
-has not been checked against a captured Ring frame; its tests use fixtures.
+was checked against the captured Ring frame on 2026-09-23. It removed 108 of 720 rows, and
+the Ring logo, `Device-ID` and `Partner` text are gone from what the model receives (see
+`docs/assets/ring-playground-frame-model-view.jpg`). The `Front` label and the bottom-right
+timestamp are outside the band and remain.
 
 ### Amazon's own live-view footage is a licensed YouTube clip
 
@@ -158,10 +176,11 @@ any disk fixture claim `ring-live`.
    issue.
 3. The official API documents historical image download via POST. In the
    Playground test it returned 303 then 416 for the preceding 24 hours; WHEP
-   returned a 201 SDP answer. Neither yielded a frame. The earlier "no snapshot
-   endpoint" claim was wrong.
+   returned a 201 SDP answer. The earlier "no snapshot endpoint" claim was wrong.
+   WHEP did yield a frame on 2026-09-23, via the browser-built offer (section 3).
 4. The watermark band our cropper removes is confirmed present, in the expected
    corner, on a genuine Ring stream.
-5. No frame in this repository comes from a Ring camera. The two fixtures remain
+5. One frame comes from Ring: the Playground sandbox stream (CC BY 4.0 clip, credited in
+   README), not a customer camera. The two fixtures remain
    AI-generated and are labelled as such everywhere they appear — see
    [`fixture-media-provenance.md`](fixture-media-provenance.md).

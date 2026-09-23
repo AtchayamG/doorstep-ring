@@ -32,7 +32,7 @@ STRICT ACCESSIBILITY RULES:
 4. FORBIDDEN: NEVER speculate on intent or motives (do not say "intending to deliver", "stopping by to visit", "suspiciously looking around").
 5. FORBIDDEN: NEVER use flowery, poetic, or dramatic language.
 6. FORBIDDEN: NEVER describe camera angles, digital artifacts, timestamps, or image resolution.
-7. REFUSAL RULE: If the image is unusable (pitch black, severely obscured, corrupted, or contains no discernible subjects or actions), you MUST refuse. Respond strictly with:
+7. REFUSAL RULE: If the image is unusable (pitch black, severely obscured, corrupted, or genuinely empty of anything describable), you MUST refuse. A scene with no person in it is NOT unusable: objects such as a package, a vehicle, an open door or an animal are subjects and must be described. Weather and light (snow, rain, fog, glare, dusk) are part of the scene, not an obstruction, as long as any object is still visible. Respond strictly with:
 REFUSAL: <brief factual reason why the image cannot be described>
 `;
 
@@ -60,6 +60,19 @@ function cleanDescription(rawText: string): string {
 }
 
 /**
+ * The per-frame instruction. A Ring sub_type is a sensor HINT, not a fact about the frame: a
+ * "human" hint over a porch that holds only a package must still produce a description of the package,
+ * not a refusal. (Found on the first real Ring Playground frame, 2026-09-23: told sub_type="human",
+ * Nova Pro refused a frame showing a parcel on the steps.)
+ */
+export function buildUserPrompt(subType?: string): string {
+  const hint = subType
+    ? `Sensor hint (may not match the image): Ring reported detection sub_type="${subType}". Describe what is actually visible, even if it does not match the hint.`
+    : 'Describe what is visually observable.';
+  return `${hint} Provide exactly one factual, present-tense sentence for an accessibility audio announcement. If the image itself is unusable, begin with REFUSAL:`;
+}
+
+/**
  * Sends a cropped image frame to Bedrock Nova Pro and enforces strict accessibility formatting.
  */
 export async function describeCroppedFrame(
@@ -72,11 +85,7 @@ export async function describeCroppedFrame(
   const modelId = options.modelId || config.bedrockModelId;
   const bedrock = client || getBedrockClient(options.region);
 
-  const contextHint = options.subType
-    ? `Sensor hint: Ring event indicates detection sub_type="${options.subType}". Describe what is visually observable.`
-    : 'Describe what is visually observable.';
-
-  const prompt = `${contextHint} Provide exactly one factual, present-tense sentence for an accessibility audio announcement. If unusable, begin with REFUSAL:`;
+  const prompt = buildUserPrompt(options.subType);
 
   try {
     const command = new ConverseCommand({

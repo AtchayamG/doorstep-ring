@@ -14,7 +14,7 @@ Doorstep transforms Ring smart doorbell and camera events into objective, spoken
 
 When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 1. Normalizes the webhook event schema using official Ring Partner API metadata (`data.attributes.sub_type`: `human`, `vehicle`, `motion`, etc.).
-2. Reads the frame for that event. Ring documents both a historical image-download endpoint and a live WebRTC stream (WHEP). The Playground image request reached the documented redirect but found no stored image in the last 24 hours (HTTP 416); WHEP returned an SDP answer, but this service has not yet received a frame. Today the frame comes from disk and is labelled as such on screen (see *Where the demo frames come from*).
+2. Reads the frame for that event. Ring serves live camera media over WebRTC (WHEP): `ops/capture-ring-browser.mjs` opens a WHEP session on the Developers Playground device and saves one decoded frame, **verified 2026-09-23** (see *Where the demo frames come from*). Ring also documents a historical image-download endpoint; on the Playground it found no stored image in the last 24 hours (HTTP 416). A Playground token cannot read events (403), so there is no live event stream to drive the webhook path, and the demo scenarios read frames from disk, labelled on screen.
 3. **Excises the server-side watermark overlay** (top 15% band containing Ring logo, Device ID, and timestamp per the June 8, 2026 Ring API specification) so model vision is not polluted by on-screen text.
 4. Performs multimodal inference via **Amazon Bedrock Nova Pro** (`amazon.nova-pro-v1:0` in `us-east-1`) under strict accessibility guardrails (single factual sentence, present tense, zero identity speculation, zero motive guessing).
 5. Enforces **loud and visible refusals** on unusable inputs (pitch-black unlit frames, corrupted feeds, or model refusal) rather than polite or deceptive fallbacks.
@@ -29,7 +29,8 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 | :--- | :--- | :--- |
 | **Ring Partner API** | **Verified (authenticated reads, 2026-09-14)** | Six endpoints returned **HTTP 200** with a real Developers Playground token: `/devices`, `/locations`, `/users/me`, and a device's `/capabilities`, `/status`, `/configurations` (`server: envoy`, distinct `x-request-id` per call, e.g. `d5791cac-8808-4824-aad8-1cf7486f1682`). The sandbox device is a Doorbell Pro reporting `online: true`. Full output: [`docs/00-research/ring-live-api-evidence.md`](docs/00-research/ring-live-api-evidence.md). |
 | **Event history** | **Blocked by scope, not by us** | `GET /devices/{id}/events` returns **403** on a Playground token, whose only scope is `ava.v1:read`. The route exists; the token cannot reach it. |
-| **Playground media** | **Frame not yet received (2026-09-23)** | The documented image POST returned **303**; its signed download returned **416** for the latest image in the past 24 hours. A browser-generated WHEP offer returned **201** with an SDP answer and host ICE candidate. A separate capture-client offer returned **500**; its cause is not established. No Ring image was obtained. The earlier 404s were from different GET paths. |
+| **Playground media (WHEP)** | **Verified: a real Ring frame received and described (2026-09-23)** | `POST /devices/{id}/media/streaming/whep/sessions` → **201**; H264 (profile `64001f`) negotiated; ICE connected; 15 frames decoded; one **1280×720** frame saved; session `DELETE` → **200**. Run through the pipeline, Nova Pro said *"A brown package is on the snowy steps."* — **6 of 6** runs described it. It is a Playground **sandbox** device, not a customer camera, and it is labelled that way. Only an offer built by headless Chrome works: the werift client's offer (VP8 plus one H264 profile) got **500**. |
+| **Historical image download** | **Endpoint exists; no stored image (2026-09-23)** | The documented `POST .../media/image/download` returned **303**; its signed download returned **416** — no image in the past 24 hours. Our earlier "no snapshot endpoint" conclusion was wrong: those 404s came from guessed GET paths. |
 | **Watermark Excision** | **Verified (Unit & Visual Tests)** | Slices top 15% rows (`134px` on 896p). Unit test `tests/watermark-crop.test.ts` proves 0% watermark pixels remain in model payload. |
 | **Bedrock Nova Pro Vision** | **Verified (Live AWS Inference)** | Multimodal inference via `@aws-sdk/client-bedrock-runtime` against `amazon.nova-pro-v1:0` in `us-east-1`. Generates concise 1-sentence descriptions. |
 | **Loud Refusal State** | **Verified (Unit & Live Tests)** | Pitch-black frame (< 3.0/255 luminance) triggers explicit `REFUSED` state, red banner, and refusal speech alert. No silent failures. |
@@ -39,17 +40,50 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 
 ---
 
+## The first real frame found a bug
+
+Until 2026-09-23 every description ran on our own fixtures. On the first real
+Ring frame, Nova Pro **refused twice**: *"No discernible human presence or
+activity in the frame."* The frame shows a parcel on snowy steps, which is
+exactly what a blind user wants to hear about.
+
+The cause was ours. With no Ring event behind a frame, the service invented
+the sensor hint `sub_type="human"`, and the refusal rule let "no person" count
+as "nothing to describe". Now no hint is invented when no event exists, a real
+`sub_type` is framed as a hint that may not match the image, and objects,
+weather and light are not grounds for refusal.
+
+| Same frame, same model | Described |
+| :--- | :--- |
+| Invented `sub_type="human"` hint (before) | **0 of 2** (both refused) |
+| Hint removed | **2 of 3** (one refusal: "too obscured by snow") |
+| Hint removed + weather and light are not obstructions | **6 of 6**: "A brown package is on the snowy steps." |
+
+The fixture scenarios still behave as documented: both AI-generated frames are
+described, and both refusal paths (the procedural frame and the pitch-black
+frame) still refuse.
+Regression test: `services/descriptor/tests/describer-prompt.test.ts`.
+
+---
+
 ## Where the demo frames come from
 
-**No frame in this demo came from a live Ring camera.** A Developers Playground
-token authenticated six discovery reads and, on 2026-09-23, the documented
-image-download POST returned 303 followed by a 416 download for the past 24
-hours. A browser-generated WHEP offer returned a 201 SDP answer; a separate
-capture-client offer returned 500. No video frame has been received.
-The older GET probes returned 404 because they targeted different paths.
-Every image the
-pipeline runs on is one of the following, and the web surface labels which one
-it is on screen, next to the image, on every run.
+**One frame has come from Ring: the Developers Playground sandbox device, over
+WHEP, on 2026-09-23.** Below is exactly what the model saw: the top 15% band,
+which carries the Ring logo and device ID, is removed before inference.
+
+![Ring Developers Playground frame after watermark excision: a parcel on snow-covered steps](docs/assets/ring-playground-frame-model-view.jpg)
+
+*Frame from the Ring Developers Playground sandbox stream, which the Playground credits as "Thief stealing our package" by YouTube user frollard, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). One frame, top 15% removed. This image is licensed CC BY 4.0, not under the repository's MIT licence.*
+
+Reproduce it with a fresh Playground token:
+`powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\with-ring-token.ps1 capture-ring-browser.mjs`
+(hidden prompt; the token never reaches the browser, a file or the log), then
+choose **Ring Playground WHEP sandbox capture** in the surface.
+
+**No frame has come from a customer's camera, and the demo video predates this
+capture.** Every image the pipeline runs on is one of the following, and the
+web surface labels which one it is on screen, next to the image, on every run.
 
 | File / scenario | Origin | How we know |
 | :--- | :--- | :--- |
@@ -57,17 +91,18 @@ it is on screen, next to the image, on every run.
 | `fixtures/SYNTHETIC-ai-generated-driveway-vehicle.jpg` | **AI-generated image** | Same C2PA credentials, read from the file's own manifest. |
 | `doorbell_chime_press` scenario | Procedurally drawn | Generated pixel-by-pixel by `createSyntheticFrame()` in `src/sample-frames.ts`. |
 | `pitch_black_unusable` scenario | Procedurally drawn | Same function; a deliberately unusable frame for the refusal path. |
+| `ring_playground_whep` scenario | **Ring Developers Playground, sandbox device (WHEP)** | Written by `ops/capture-ring-browser.mjs` to the gitignored `ops/captures/`. Labelled "Ring Playground WHEP sandbox — Not a customer camera." If no capture exists, it falls back to a fixture labelled AI-generated. |
 | "Upload Frame" button | Whatever you supply | The app makes no claim about a file you choose yourself. |
 
 The full evidence, including the raw C2PA manifest output, is in
 [`docs/00-research/fixture-media-provenance.md`](docs/00-research/fixture-media-provenance.md).
 
 One consequence, since it looks like a feature otherwise: only the two
-AI-generated frames produce a real description. Run `doorbell_chime_press` and
+AI-generated frames and the Playground frame produce a real description. Run `doorbell_chime_press` and
 Nova Pro refuses it — *"The image is a solid color with no discernible subjects
 or actions."* Our procedurally drawn frames are flat shapes, and the model is
-right to decline them. So the describing path in this demo is currently
-exercised by generated photographs, and the refusal path by our own drawings.
+right to decline them. So the describing path is exercised by generated photographs and one real
+Ring frame, and the refusal path by our own drawings.
 Reproduce both with `node ops/verify-frame-origin.mjs` against a running
 service.
 

@@ -71,7 +71,8 @@ export function createServer() {
 
       let imageBuffer: Buffer | undefined;
       let effectiveEventType = eventType || 'motion_detected';
-      let effectiveSubType = subType || 'human';
+      // No invented sensor hint: an upload or a Playground capture has no Ring event behind it.
+      let effectiveSubType: string | undefined = subType || undefined;
       // Where this frame came from, travelling with the frame itself. The UI
       // labels the image from this and nothing else, so a generated fixture
       // can never be presented to a viewer as camera output.
@@ -91,8 +92,9 @@ export function createServer() {
           );
           imageBuffer = frame.buffer;
           frameOrigin = frame.frameOrigin;
-          effectiveEventType = fixture.eventType;
-          effectiveSubType = fixture.subType;
+          // The Playground token cannot read events (403), so no Ring sub_type exists for this frame.
+          effectiveEventType = 'motion_detected';
+          effectiveSubType = undefined;
         } else if (scenario) {
           imageBuffer = scenario.generateImage();
           effectiveEventType = scenario.eventType;
@@ -141,7 +143,7 @@ export function createServer() {
         id: 'ring_playground_whep',
         name: 'Ring Playground WHEP sandbox capture (fixture fallback)',
         eventType: 'motion_detected',
-        subType: 'human',
+        subType: 'motion',
         descriptionHint: 'Captured sandbox frame if present; otherwise declared AI fixture',
         isBlackout: false,
         frameOrigin: fs.existsSync(playgroundFramePath) ? 'ring-playground-whep' : 'ai-generated'
