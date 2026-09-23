@@ -36,8 +36,7 @@ export const config: AppConfig = {
 export function getRedactedToken(token?: string): string {
   const t = token || config.ringAccessToken;
   if (!t) return '(none)';
-  if (t.length <= 10) return '***';
-  return `${t.substring(0, 4)}...${t.substring(t.length - 4)}`;
+  return `(length: ${t.length})`;
 }
 
 export function isRingTokenSet(): boolean {

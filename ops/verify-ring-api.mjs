@@ -1,35 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load env if present
-const envPaths = [
-  path.resolve(__dirname, '../.env.local'),
-  path.resolve(__dirname, '../.env'),
-  path.resolve(__dirname, '../../.env.local'),
-  path.resolve(__dirname, '../../.env')
-];
-
-let rawToken = process.env.RING_ACCESS_TOKEN || '';
-for (const p of envPaths) {
-  if (fs.existsSync(p)) {
-    const lines = fs.readFileSync(p, 'utf8').split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('RING_ACCESS_TOKEN=')) {
-        rawToken = trimmed.replace('RING_ACCESS_TOKEN=', '').trim().replace(/^["']|["']$/g, '');
-      }
-    }
-  }
-}
+// Never load the Ring token from a file. Use ops/with-ring-token.ps1.
+const rawToken = process.env.RING_ACCESS_TOKEN || '';
 
 function redact(t) {
   if (!t) return '(none configured)';
-  if (t.length <= 8) return '***';
-  return `${t.slice(0, 4)}...${t.slice(-4)} (length: ${t.length})`;
+  return `(length: ${t.length})`;
 }
 
 async function verifyRingApi() {
@@ -55,18 +29,9 @@ async function verifyRingApi() {
     console.log(`HTTP Status:     ${res.status} ${res.statusText}`);
     console.log('Response Headers:');
     for (const [k, v] of res.headers.entries()) {
-      if (['server', 'x-request-id', 'content-type', 'date', 'www-authenticate'].includes(k.toLowerCase())) {
+      if (['server', 'content-type'].includes(k.toLowerCase())) {
         console.log(`  ${k}: ${v}`);
       }
-    }
-
-    const text = await res.text();
-    console.log('Response Body:');
-    try {
-      const json = JSON.parse(text);
-      console.log(JSON.stringify(json, null, 2));
-    } catch {
-      console.log(text || '(empty body)');
     }
 
     console.log('-----------------------------------------------------------');
@@ -81,7 +46,7 @@ async function verifyRingApi() {
     }
     console.log('===========================================================');
   } catch (err) {
-    console.error('Connection error:', err.message);
+    console.error('Connection error (details suppressed).');
     process.exit(1);
   }
 }

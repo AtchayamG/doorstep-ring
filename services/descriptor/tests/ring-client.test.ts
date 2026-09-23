@@ -19,7 +19,6 @@ test('Ring Client: Handles custom base URL and token redaction', () => {
   const testToken = 'SANDBOX_TOKEN_SECRET_998877665544332211';
   const client = new RingPartnerClient(testToken, 'https://api.amazonvision.com/v1/');
   assert.strictEqual(client.hasToken, true);
-  assert.ok(client.redactedToken.startsWith('SAND...'));
-  assert.ok(client.redactedToken.endsWith('2211'));
-  assert.ok(!client.redactedToken.includes('SECRET_998877'));
+  assert.strictEqual(client.redactedToken, `(length: ${testToken.length})`);
+  assert.ok(!client.redactedToken.includes(testToken.slice(0, 6)));
 });
