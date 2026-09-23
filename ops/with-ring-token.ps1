@@ -16,8 +16,16 @@ try {
     $logDirectory = Join-Path $PSScriptRoot 'logs'
     New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
     $logPath = Join-Path $logDirectory ("{0}-{1}.log" -f $Script.Replace('.mjs', ''), (Get-Date -Format 'yyyyMMdd-HHmmss'))
-    $safeLines = @(& node $scriptPath 2>&1 | ForEach-Object { ([string]$_).Replace($plainToken, '[REDACTED]') })
-    $nodeExitCode = $LASTEXITCODE
+    # Windows PowerShell turns native stderr into ErrorRecord; with Stop it aborts
+    # this pipeline before the status-only output can be sanitized and logged.
+    $ErrorActionPreference = 'Continue'
+    try {
+        $safeLines = @(& node $scriptPath 2>&1 | ForEach-Object { ([string]$_).Replace($plainToken, '[REDACTED]') })
+        $nodeExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = 'Stop'
+    }
     $safeLines | Set-Content -LiteralPath $logPath -Encoding UTF8
     $safeLines | ForEach-Object { Write-Output $_ }
     Write-Output "Sanitized log: $logPath"
