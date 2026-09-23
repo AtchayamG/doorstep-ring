@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import cors from 'cors';
+import { corsForAllowedOrigins, originGuard } from './origin-guard.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,10 @@ export function createServer() {
   const app = express();
   const ringClient = new RingPartnerClient();
 
-  app.use(cors());
+  // Refuse foreign browser origins and rebound Host names before any route runs;
+  // /api/describe spends Bedrock on the operator's account. See origin-guard.ts.
+  app.use(originGuard());
+  app.use(corsForAllowedOrigins());
   app.use(express.json({ limit: '25mb' }));
 
   // API Status endpoint

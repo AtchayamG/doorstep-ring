@@ -4,7 +4,7 @@
 **▶ [Watch the 2:50 demo](https://youtu.be/4qkuwQc-QwM)** — the live pipeline, the guardrail audit flagging our own model output, and a first-class refusal on an unusable frame.
 
 > Intelligent, spoken doorway accessibility descriptions scheduled for blind and low-vision viewers.
-> Built for the Amazon **Build, Ship, Shape** Developer Hackathon 2026 — **Ring Track (Phase 1)**
+> Built for the Amazon **Build, Ship, Shape** Developer Hackathon 2026 — **Ring Track**
 
 ---
 
@@ -14,12 +14,12 @@ Doorstep transforms Ring smart doorbell and camera events into objective, spoken
 
 When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 1. Normalizes the webhook event schema using official Ring Partner API metadata (`data.attributes.sub_type`: `human`, `vehicle`, `motion`, etc.).
-2. Retrieves the camera snapshot from the Ring Partner API (`https://api.amazonvision.com/v1`).
+2. Reads the frame for that event. Ring exposes camera media only as a live WebRTC stream (WHEP) — there is no still-snapshot endpoint — and this service does not yet run a WHEP client, so today the frame comes from disk and is labelled as such on screen (see *Where the demo frames come from*).
 3. **Excises the server-side watermark overlay** (top 15% band containing Ring logo, Device ID, and timestamp per the June 8, 2026 Ring API specification) so model vision is not polluted by on-screen text.
 4. Performs multimodal inference via **Amazon Bedrock Nova Pro** (`amazon.nova-pro-v1:0` in `us-east-1`) under strict accessibility guardrails (single factual sentence, present tense, zero identity speculation, zero motive guessing).
 5. Enforces **loud and visible refusals** on unusable inputs (pitch-black unlit frames, corrupted feeds, or model refusal) rather than polite or deceptive fallbacks.
 6. Presents an **honest token failure state** when the 30-minute Developers Playground sandbox token is expired or absent, linking directly to the official console (`https://developer.amazon.com/ring/console/playground`) with zero fabricated live transcripts.
-7. Synthesizes a spoken accessibility caption formatted for immediate audio playback.
+7. Speaks the caption aloud in the browser with the Web Speech API.
 
 ---
 
@@ -35,13 +35,17 @@ When a Ring camera detects motion or a doorbell button is pressed, Doorstep:
 | **Loud Refusal State** | **Verified (Unit & Live Tests)** | Pitch-black frame (< 3.0/255 luminance) triggers explicit `REFUSED` state, red banner, and refusal speech alert. No silent failures. |
 | **Token Absence Transparency** | **Verified (Surface & API Tests)** | When token is expired or missing, UI displays warning banner with link to `https://developer.amazon.com/ring/console/playground` and suppresses transcripts. |
 | **Fire TV APK Integration** | *Deferred to Phase 2* | Intentionally isolated to protect frozen Project 1 and Project 3 release artifacts. |
+| **Cross-origin & network guard** | **Verified 2026-09-23 — and it was a real hole until then** | The service answered every origin with `Access-Control-Allow-Origin: *` and listened on every interface, so any web page, or anyone on the same network, could drive `/api/describe` — Bedrock inference billed to the operator's AWS account. `tests/origin-guard.test.ts` was run against the old code first: a foreign-origin describe returned **200**. Now foreign origins get **403** before any route runs, a rebound `Host` gets 403, and the service binds **127.0.0.1**. |
 
 ---
 
 ## Where the demo frames come from
 
-**No frame in this demo came from a live Ring camera.** We have no Ring Partner
-API token yet, so there is nothing to fetch a real frame with. Every image the
+**No frame in this demo came from a live Ring camera.** Not for want of a token:
+a Developers Playground token did authenticate six real Ring API reads (table
+above). The reason is that Ring has no still-frame endpoint — `/snapshot`,
+`/media` and `/recordings` all return 404 — and camera media is WebRTC only,
+which this service does not yet implement. Every image the
 pipeline runs on is one of the following, and the web surface labels which one
 it is on screen, next to the image, on every run.
 
