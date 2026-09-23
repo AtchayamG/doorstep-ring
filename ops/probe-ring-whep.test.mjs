@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { probeRingWhep } from './probe-ring-whep.mjs';
+import { probeRingWhep, probeSnapshot } from './probe-ring-whep.mjs';
+import pngjs from '../services/descriptor/node_modules/pngjs/lib/png.js';
 
 const device = { data: [{ id: 'sandbox-device', attributes: { name: 'Playground Device' } }] };
 const offer = 'v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\na=recvonly\r\n';
@@ -45,3 +46,46 @@ test('403 session is a status-only feasibility block', async () => {
     iceCandidateTypes: []
   });
 });
+
+test('snapshot follows a 303 privately and returns a mocked 200 image', async () => {
+  const image = pngjs.PNG.sync.write({ width: 2, height: 3, data: Buffer.alloc(2 * 3 * 4, 255) });
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url: String(url), options });
+    if (options.method === 'POST') return new Response(null, {
+      status: 303,
+      headers: { location: 'https://download.example.test/v1/download?security_token=secret' }
+    });
+    return new Response(image, { status: 200, headers: { 'content-type': 'image/png' } });
+  };
+  const result = await probeSnapshot({ token: 'test-secret', deviceId: 'sandbox-device', fetchImpl, now: 1_800_000_000_000 });
+  assert.equal(result.requestStatus, 303);
+  assert.equal(result.downloadStatus, 200);
+  assert.equal(result.downloadContentType, 'image/png');
+  assert.equal(result.downloadBytes, image.length);
+  assert.equal(result.pixelSize, '2x3');
+  assert.deepEqual(result.imageBuffer, image);
+  assert.equal(calls[0].options.redirect, 'manual');
+  assert.equal(calls[1].options.headers?.Authorization, undefined);
+  assert.equal(calls[1].options.redirect, 'manual');
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.type, 'latest_in_range');
+  assert.equal(body.end_timestamp - body.start_timestamp, 24 * 60 * 60 * 1000);
+});
+
+for (const status of [403, 503]) {
+  test(`snapshot ${status} records only status, content-type and byte length`, async () => {
+    const fetchImpl = async () => new Response('private error details', {
+      status,
+      headers: { 'content-type': 'application/json' }
+    });
+    const result = await probeSnapshot({ token: 'test-secret', deviceId: 'sandbox-device', fetchImpl, now: 1_800_000_000_000 });
+    assert.equal(result.requestStatus, status);
+    assert.equal(result.requestContentType, 'application/json');
+    assert.equal(result.requestBytes, Buffer.byteLength('private error details'));
+    assert.equal(result.downloadStatus, null);
+    assert.equal(result.imageBuffer, null);
+    assert.ok(!JSON.stringify(result).includes('private error details'));
+    assert.ok(!JSON.stringify(result).includes('test-secret'));
+  });
+}

@@ -6,6 +6,7 @@ dist/
 build/
 ops/video/frames/
 ops/video/base.mp4
+ops/captures/
 
 # Environment and sensitive tokens
 .env
