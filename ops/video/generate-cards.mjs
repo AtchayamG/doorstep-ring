@@ -74,7 +74,7 @@ async function renderCards() {
   <div class="content">
     <div class="badge-row">
       <div class="badge">Amazon Developer Hackathon 2026</div>
-      <div class="badge track">Project 2 • Ring Track (Phase 1)</div>
+      <div class="badge track">Project 2 • Ring Track</div>
     </div>
     <h1><span>Doorstep</span></h1>
     <p class="tagline">Objective Spoken Video Descriptions for Blind & Low-Vision Ring Users</p>
@@ -135,13 +135,13 @@ async function renderCards() {
     <p class="tagline">Verified API Reality • First-Class Refusals • 100% Disclosure Integrity</p>
     <div class="provenance-box">
       <strong>Media Provenance & API Reality:</strong><br>
-      • Ring Developers Playground: 6 authenticated endpoints return HTTP 200 (Doorbell Pro online).<br>
-      • Image download: documented POST; Playground probe returned 303 then 416 (no stored image in the last 24 hours). WHEP returned a 201 SDP answer; no frame received. WHEP client scoped for Phase 2 pending frame capture.<br>
-      • Test Media: Explicitly disclosed AI-generated fixtures with signed Google C2PA Content Credentials.
+      • Ring Developers Playground: six discovery endpoints and event history return HTTP 200.<br>
+      • One real frame received over WebRTC WHEP from the Playground sandbox device (not a customer camera) and described by Nova Pro. Stream clip: “Thief stealing our package” by frollard, CC BY 4.0.<br>
+      • Photographic presets: AI-generated test frames with signed Google C2PA Content Credentials, labelled on screen.
     </div>
     <div class="footer-row">
       <div>Author: <span>Atchayam G</span></div>
-      <div>Track: <span>Ring (Phase 1)</span></div>
+      <div>Track: <span>Ring</span></div>
       <div>Hackathon: <span>Build, Ship, Shape 2026</span></div>
     </div>
     <div class="tts-disclosure" style="margin-top: 24px; font-size: 19px; color: #64748b; font-weight: 500;">

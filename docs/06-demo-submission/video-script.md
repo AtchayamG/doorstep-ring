@@ -1,11 +1,11 @@
 # Video Narration Script & Storyboard — Doorstep (Ring Track)
 
 > **Amazon Developer Hackathon (Build, Ship, Shape 2026)**  
-> **Project**: Doorstep (Ring Track — Phase 1)  
+> **Project**: Doorstep (Ring Track)
 > **Deliverable**: `doorstep-demo.mp4`  
 > **Author**: Atchayam G (solo entrant)  
 > **Narrator Voice**: Microsoft Edge Neural TTS (`en-IN-PrabhatNeural`)  
-> **Target Duration**: 2:30 – 2:55 (Hard ceiling: 3:00 / 180s; Actual: 2:51.00 / 171.0s)  
+> **Target Duration**: under 3:00 (Hard ceiling: 180s; Actual: 2:55.7 / 175.74s, re-cut 2026-09-24)
 > **Resolution**: 1920x1080 @ 30fps with stereo AAC audio  
 > **Voice Engine**: Microsoft Edge Neural TTS (`en-IN-PrabhatNeural`, `--rate=+12%` / `--rate=+15%`)
 
@@ -20,8 +20,8 @@
 | **3** | `watermark_excision`| Scroll to Step 2. Input frame (15% boxed zone) vs cropped frame. Telemetry bar (134px / 15% excised). | 30.50s | 0:47 – 0:78 |
 | **4** | `nova_pro_guardrail_audit`| Scroll to Step 3 & 4. Green `DESCRIBED` badge, amber `Identity inference: 'man'` pill, green motive/tense pills, spoken caption. | 29.18s | 0:78 – 1:07 |
 | **5** | `loud_refusal` | Select `Pitch Black Frame (Loud Refusal Test)`. Click execute. Crimson `🛑 LOUD REFUSAL TRIGGERED` banner (0.0/255 lux). | 22.82s | 1:07 – 1:31 |
-| **6** | `truth_in_advertising`| Published cut: overview and amber C2PA strip. Its "no REST snapshot" claim is superseded by the 2026-09-23 correction below. | 30.41s | 1:31 – 2:42 |
-| **7** | `closing_card` | Closing title card with project name, hackathon track, credits, and Edge TTS narration disclosure. | 6.70s | 2:42 – 2:51 |
+| **6** | `real_ring_frame` | Re-recorded 2026-09-24. Select `Ring Playground WHEP sandbox capture`, execute. The real Playground frame (captured over WHEP) is cropped and described by Nova Pro; guardrails pass; on-screen credit for the CC BY 4.0 Playground clip. | 35.90s | 2:11 – 2:48 |
+| **7** | `closing_card` | Closing card (re-rendered 2026-09-24): six discovery endpoints and event history return 200; one real WHEP frame; AI-generated presets labelled; Edge TTS disclosure. | 6.70s | 2:48 – 2:56 |
 
 ---
 
@@ -62,14 +62,14 @@
 
 ---
 
-### Segment 6: Truth in Advertising — Provenance & API Reality (1:31 – 2:42)
-> *Correction to the published narration (the uploaded video itself is unchanged): No frame in that demo came from a Ring camera; the photographic fixtures are AI-generated and declared on screen. Ring does document a historical image-download POST. On 2026-09-23 the Playground request returned 303 and its signed download returned 416 for the preceding 24 hours. WHEP returned 201 with an SDP answer, but no frame was received. The narration's claim that no REST snapshot endpoint exists is wrong.*
+### Segment 6: A Real Ring Frame, Described (2:11 – 2:48)
+> *"Now a real Ring frame. On the Ring Developers Playground sandbox device, Doorstep opens a live WebRTC WHEP session, decodes one frame, and runs it through the same pipeline. The watermark band is cut away, and Nova Pro describes the parcel on the snowy steps. The first time, it refused, because our prompt had told the model to expect a person. We fixed the prompt, and it now describes this frame six times out of six. The two photographic presets are still AI-generated test frames, labelled on screen."*
 
-* **On-Screen Action**: Interface overview highlighting the amber provenance badges, honest status pills, and verified architecture.
+* **On-Screen Action**: Scenario `Ring Playground WHEP sandbox capture`, sub_type shown as none (no Ring event exists for this frame). Step 2 shows the 1280x720 Playground frame with the 108-row watermark band excised; Step 3 shows `DESCRIBED` with Nova Pro's sentence about the package on the snowy steps and three green guardrails. A top-right credit reads: Frame source: Ring Developers Playground sandbox stream (not a customer camera). Clip: "Thief stealing our package" by frollard, CC BY 4.0. Segments 1-5 are reused unchanged from the 2026-09-15 cut.
 
 ---
 
-### Segment 7: Conclusion & Outro (2:42 – 2:51)
+### Segment 7: Conclusion & Outro (2:48 – 2:56)
 > *"Doorstep: built on verified API reality, honest refusals, and genuine accessibility."*
 
 * **On-Screen Action**: Closing title card with project metadata, hackathon track, credits, and Neural TTS disclosure.

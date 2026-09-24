@@ -56,11 +56,11 @@
   },
   {
     "id": "seg06_reality",
-    "eyebrow": "PROVENANCE & API REALITY",
-    "headline": "Transparent Disclosures & Authenticated Findings",
-    "text": "Finally, complete transparency on what is real. No frame came from a live Ring camera. Our photographic fixtures are AI-generated test frames with signed Google C2PA credentials, declared in the amber warning strip. While testing against the Ring Playground proved six authenticated endpoints return 200, Ring provides no REST snapshot endpoint. Live frame capture requires WebRTC WHEP, scoped for Phase 2.",
-    "filename": "06_seg06_reality.mp3",
-    "filePath": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\02-ring-doorstep\\ops\\video\\vo\\06_seg06_reality.mp3",
+    "eyebrow": "REAL RING FRAME · PLAYGROUND WHEP",
+    "headline": "A Live Sandbox Frame, Described by Nova Pro",
+    "text": "Now a real Ring frame. On the Ring Developers Playground sandbox device, Doorstep opens a live WebRTC WHEP session, decodes one frame, and runs it through the same pipeline. The watermark band is cut away, and Nova Pro describes the parcel on the snowy steps. The first time, it refused, because our prompt had told the model to expect a person. We fixed the prompt, and it now describes this frame six times out of six. The two photographic presets are still AI-generated test frames, labelled on screen.",
+    "filename": "06_seg06_realframe.mp3",
+    "filePath": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\02-ring-doorstep\\ops\\video\\vo\\06_seg06_realframe.mp3",
     "durationSec": 30.408,
     "startSec": 131.296,
     "endSec": 161.704

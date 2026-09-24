@@ -122,6 +122,11 @@ class DoorstepApp {
       } else if (val === 'pitch_black_unusable') {
         this.eventSubTypeInput.value = 'motion';
         this.eventTypeBadge.textContent = 'motion_detected';
+      } else if (val === 'ring_playground_whep') {
+        // A Playground capture has no Ring motion or doorbell event behind it, so there is no sub_type to show.
+        this.eventSubTypeInput.value = '';
+        this.eventSubTypeInput.placeholder = 'none (no Ring event for this frame)';
+        this.eventTypeBadge.textContent = 'motion_detected';
       }
     });
 

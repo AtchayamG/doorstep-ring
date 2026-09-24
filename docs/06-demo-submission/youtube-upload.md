@@ -6,19 +6,19 @@ description and tags existed **only on YouTube**, which meant a lost or
 re-uploaded video would have had to be reconstructed from memory. Recovered
 from the live video and written down here.
 
-**File**: `docs/06-demo-submission/doorstep-demo.mp4` (12.3 MB / 12,846,498
-bytes, 170.000s = 2:50.0, 1920x1080 @ 30fps, AAC 48 kHz stereo)
+**File**: `docs/06-demo-submission/doorstep-demo.mp4`, re-cut 2026-09-24 (175.74s = 2:55.7, 1920x1080 @ 30fps, AAC 48 kHz stereo).
+Segments 1-5 are the 2026-09-15 cut, unchanged; segment 6 and the closing card are new.
 
 **Thumbnail**: `docs/assets/thumbnail-youtube.png` (476 KB)
 
-**Audio**: integrated -16.0 LUFS, true peak -3.7 dBTP. This is close to
-YouTube's normalisation target and needs no remaster. (For contrast, P1 shipped
-at -19.9 LUFS and had to be re-mastered — see that project's upload doc for why
-a low-LUFS master reaches the viewer quiet.)
+**Audio**: integrated -16.1 LUFS (measured with ffmpeg ebur128 on the re-cut). No remaster needed.
 
-10.0 seconds under the 3:00 hard limit. **There is no room to add a segment
-without cutting one**, which matters for the open item at the bottom of this
-file.
+
+
+
+4.3 seconds under the 3:00 hard limit. There is no room to add anything without cutting something.
+
+
 
 ## Visibility
 
@@ -44,14 +44,14 @@ What this demo shows, in order:
 0:46  Watermark excision: the top 15% (134px on an 896px frame) never reaches the model
 1:18  Nova Pro under accessibility guardrails, and the audit that checks them
 1:43  A pitch-black frame: first-class loud refusal, not a polite fallback
-2:07  What is real and what is generated — signed C2PA provenance on every fixture
-2:38  Close
+2:11  A real Ring frame from the Developers Playground (over WHEP), described by Nova Pro
+2:48  Close
 
 Two things worth your time:
 
 THE GUARDRAILS ARE MEASURED, NOT ASSERTED. The surface used to print three green ticks — "No Identity Speculation", "No Motive/Intent Guessing", "Present Tense" — hardcoded in the HTML, under a description the app never inspected. Nova Pro returned "A man wearing a blue jacket and jeans…", which is an appearance-derived identity claim a blind user cannot check, and the green tick above it certified that this had not happened. There is now a real checker: it flags gendered, age and occupation claims, motive language, and past tense or multi-sentence output, and names the offending token. In this video you can watch it flag our own headline description in amber. A tick nothing measures is worse than no tick.
 
-NO FRAME CAME FROM A LIVE RING CAMERA. The photographic fixtures are AI-generated test frames carrying signed Google C2PA content credentials, declared on screen in an amber strip on every frame that uses one. Testing against the Ring Developers Playground returned 200 on six authenticated discovery endpoints. Ring also documents `POST /media/image/download`; our 2026-09-23 request returned 303, then its signed download returned 416 for the past 24 hours. WHEP returned 201 with an SDP answer, but no frame was received. The published video predates this correction; its narration about there being no snapshot endpoint is wrong. The evidence and correction are in the repo.
+ONE REAL RING FRAME, AND WHAT IS STILL GENERATED. At 2:11 Doorstep opens a WebRTC WHEP session on the Ring Developers Playground sandbox device, decodes one 1280x720 frame and runs it through the same pipeline. The first time, Nova Pro refused it, because our prompt told the model to expect a person; after the fix it describes the frame 6 times out of 6. It is a sandbox stream, not a customer camera, and the Playground clip is "Thief stealing our package" by frollard, CC BY 4.0. The two photographic presets are AI-generated test frames with signed Google C2PA content credentials, labelled on screen. The Playground token also returned 200 on six discovery endpoints and on event history. Evidence for every number is in the repo.
 
 Amazon "Build, Ship, Shape" Developer Hackathon 2026
 Track: Ring · Mini: Open Source
@@ -78,7 +78,7 @@ Ring, video doorbell, accessibility, blind, low vision, audio description, Amazo
 
 ## Uploaded
 
-**https://youtu.be/4qkuwQc-QwM** — public, 2:50, confirmed live 2026-09-21.
+**Re-cut pending upload (2026-09-24).** Previous upload: https://youtu.be/4qkuwQc-QwM (2:50, 2026-09-15 cut; its narration wrongly said Ring has no snapshot endpoint). Replace this line with the new link once the re-cut is live.
 
 Carried into the Devpost **submission** record and the Devpost **project**
 record. Those are two separate records on Devpost: the video link does **not**
@@ -92,35 +92,8 @@ save reported success. If this video is ever replaced, update both:
 Then verify by reading the iframe `src` on the public page. A saved field is not
 a refreshed embed.
 
-## OPEN ITEM — the strongest evidence is not in the video
+## Resolved 2026-09-24: Ring API use is now in the video
 
-The token-missing banner occupies roughly the top 18% of the frame for all 170
-seconds, headlined **"No Valid Ring Playground Token Detected"**. The small
-print underneath is honest and on-message — "live Ring API snapshots are
-honestly blocked (HTTP 401). No canned live responses are fabricated" — and the
-refusal is genuinely the feature.
-
-But the video never shows the six Ring endpoints that **really did return HTTP
-200** on 2026-09-14: `/devices`, `/locations`, `/users/me`, and a device's
-`/capabilities`, `/status` and `/configurations`, each with `server: envoy` and
-a distinct `x-request-id`, against a Doorbell Pro reporting `online: true`.
-That is in `docs/00-research/ring-live-api-evidence.md` and in the README — but
-Stage 1 of the judging is **pass/fail on real use of the track's APIs**, and the
-rules say judges may score from the video and description alone. So the
-strongest Stage-1 evidence this project has was missing from the artifact most
-likely to be scored.
-
-**Mitigated 2026-09-21 without a re-upload**: that evidence now appears in the
-Devpost description at roughly character 700 instead of 4862, directly under
-"What it does", together with an explicit explanation of why the video shows the
-401 banner. A judge who sees the red banner and then reads the description now
-finds the answer immediately rather than two-thirds of the way down.
-
-**If this video is ever re-cut**, the fix is an 8-second full-screen card
-showing those six 200s with their request ids. Note the constraint: at 170s
-there are only 10s of headroom, and the assembly overlays cards onto one
-continuous screencast (`ops/video/assemble.mjs`) rather than concatenating
-segments, so a new card means either replacing a stretch of screencast or
-re-recording. The narration is already timed to `vo-manifest.json`, so a new
-card needs a matching voice line or it will play under narration about something
-else.
+The re-cut shows a real Ring frame arriving over WHEP and being described (2:11), and the closing card lists the
+six discovery endpoints and event history returning 200. The token banner still shows for the reused segments,
+which is accurate: the app holds no token at runtime; the capture script uses a hidden-prompt token and exits.
