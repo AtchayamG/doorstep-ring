@@ -1,7 +1,7 @@
 # Doorstep
 
 
-**▶ [Watch the 2:50 demo](https://youtu.be/4qkuwQc-QwM)** — the live pipeline, the guardrail audit flagging our own model output, and a first-class refusal on an unusable frame.
+**▶ [Watch the 2:56 demo](https://youtu.be/PYr5FaDMFD8)** — the live pipeline, the guardrail audit flagging our own model output, and a first-class refusal on an unusable frame.
 
 > Intelligent, spoken doorway accessibility descriptions scheduled for blind and low-vision viewers.
 > Built for the Amazon **Build, Ship, Shape** Developer Hackathon 2026 — **Ring Track**

@@ -78,7 +78,7 @@ Ring, video doorbell, accessibility, blind, low vision, audio description, Amazo
 
 ## Uploaded
 
-**Re-cut pending upload (2026-09-24).** Previous upload: https://youtu.be/4qkuwQc-QwM (2:50, 2026-09-15 cut; its narration wrongly said Ring has no snapshot endpoint). Replace this line with the new link once the re-cut is live.
+**Uploaded 2026-09-24: https://youtu.be/PYr5FaDMFD8 — Devpost both records verified.** Previous upload: https://youtu.be/4qkuwQc-QwM (2:50, 2026-09-15 cut; its narration wrongly said Ring has no snapshot endpoint).
 
 Carried into the Devpost **submission** record and the Devpost **project**
 record. Those are two separate records on Devpost: the video link does **not**
