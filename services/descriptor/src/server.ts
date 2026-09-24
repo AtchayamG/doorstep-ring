@@ -92,7 +92,7 @@ export function createServer() {
           );
           imageBuffer = frame.buffer;
           frameOrigin = frame.frameOrigin;
-          // The Playground token cannot read events (403), so no Ring sub_type exists for this frame.
+          // No motion or doorbell event exists for a Playground capture (its history holds only on_demand live-view events), so there is no Ring sub_type for this frame.
           effectiveEventType = 'motion_detected';
           effectiveSubType = undefined;
         } else if (scenario) {

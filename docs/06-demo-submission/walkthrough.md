@@ -161,8 +161,8 @@ When executed with a valid 30-minute Playground token (`ava.v1:read`), the API r
    * `GET /devices`: Returns device object with `attributes.name: "Playground Device"` and CDN image confirming **Doorbell Pro**.
    * `GET /devices/{id}/status`: Reports `online: true` with sub-minute timestamps.
    * `GET /locations`, `GET /users/me`, `GET /devices/{id}/capabilities`, `GET /devices/{id}/configurations`.
-2. **HTTP 403 Forbidden on Events**:
-   * `GET /devices/{id}/events` returns 403 Forbidden because `ava.v1:read` scope does not permit event history retrieval.
+2. **Event history is readable at the documented path**:
+   * `GET /v1/history/devices/{id}/events` returns 200 (2026-09-24: 7 `on_demand` events, no motion or doorbell events). The undocumented `GET /devices/{id}/events` returns 403, and a made-up route returns 404.
 3. **Documented image download and live WHEP are separate routes**:
    * The earlier GET guesses (`/snapshot`, `/media`, `/recordings`) returned 404. The documented image POST returned 303; its signed download returned 416 for the last 24 hours. WHEP returned 201 with an SDP answer, and `ops/capture-ring-browser.mjs` received one frame from it (2026-09-23).
 4. **CC BY 4.0 Video Provenance**:

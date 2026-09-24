@@ -8,13 +8,13 @@
 
 ---
 
-### Entry 1: Ring Partner API Sandbox Scope (`ava.v1:read`) Returns 403 Forbidden on Device Events
-* **Task Attempted**: Querying event history (`GET https://api.amazonvision.com/v1/devices/{id}/events`) to drive the event-to-description pipeline from the live Ring Playground Doorbell Pro sandbox device.
-* **Steps Taken**: Authenticated against `api.amazonvision.com/v1` using a valid bearer token generated directly from the Ring Developers Playground (`scopes: ava.v1:read`, issuer: `RingOauthService-prod:us-east-1:1.0.3328.0`).
-* **Expected vs Actual**: Expected the read scope issued by the Playground to permit reading event records for the sandbox device, especially since `GET /devices/{id}/status` reported `online: true` (Doorbell Pro). Instead, the gateway returned **HTTP 403 Forbidden** (`server: envoy`). The only scope issued by the Developers Playground (`ava.v1:read`) is insufficient to access `/events`. Developers building an event-driven accessibility service cannot test real event retrieval against the sandbox device.
-* **Severity**: High (completely blocks event stream testing in the official developer sandbox).
-* **Workaround**: Documented in `docs/00-research/ring-live-api-evidence.md`. Engineered the pipeline to accept webhook-shaped payloads (`POST /api/webhook`) adhering strictly to the Ring JSON:API schema structure (`data.attributes.sub_type`).
-* **Suggested Fix**: Grant `ava.v1:read` access to `GET /devices/{id}/events` in the Developers Playground sandbox, or provide a mock event generator toggle directly in the Playground console.
+### Entry 1: Event History Was at a Different Path, and the Sandbox Logs Only Live-View Events
+* **Task Attempted**: Reading event history to drive the event-to-description pipeline from the Developers Playground sandbox device.
+* **Steps Taken**: First called `GET /v1/devices/{id}/events`, a path we guessed, with a Playground token (`scopes: ava.v1:read`). It returned 403 (`server: envoy`). On 2026-09-24 we called the documented `GET /v1/history/devices/{id}/events` with the same kind of token, plus a made-up route as a control (`ops/probe-ring-events.mjs`).
+* **Expected vs Actual**: The documented path returned **HTTP 200**: 7 events, all `event_type: on_demand`, each with `start` and `end`. The sandbox device has no motion, doorbell or package events, so the pipeline still cannot be driven by a real Ring event. The guessed path returns 403 while a made-up route returns 404. A 403 on a route that is not documented led us to blame the scope, and that conclusion was wrong.
+* **Severity**: Medium (history is readable; the sandbox has no motion or doorbell events to read).
+* **Workaround**: Kept the webhook-shaped payload path (`POST /api/webhook`, Ring JSON:API `data.attributes.sub_type`) for event-driven tests. The frame itself now comes from the Playground over WHEP.
+* **Suggested Fix**: Let the Playground generate motion and doorbell events (a "Trigger Test Event" button) that appear in event history and reach a registered webhook. Return 404 rather than 403 for routes that do not exist.
 
 ---
 
@@ -102,7 +102,7 @@
 
 | Entry # | Issue Summary | Reproduction Command or Source URL |
 | :--- | :--- | :--- |
-| **Entry 1** | Sandbox `ava.v1:read` returns 403 on `/events` | `GET https://api.amazonvision.com/v1/devices/{id}/events` (documented in `docs/00-research/ring-live-api-evidence.md`) |
+| **Entry 1** | Event history readable at the documented path (200, 7 `on_demand` events); no motion or doorbell events in the sandbox | `GET /v1/history/devices/{id}/events` via `ops/probe-ring-events.mjs`; the earlier 403 was the undocumented `/v1/devices/{id}/events` |
 | **Entry 2** | Snapshot POST 303; signed download 416 for past 24 hours | `POST /v1/devices/{id}/media/image/download` — [official Ring reference](https://developer.amazon.com/docs/ring/api-documentation.html); status-only probe in `ops/probe-ring-whep.mjs` |
 | **Entry 3** | CC BY 4.0 YouTube Video in Sandbox Live View | Developers Playground Package stream inspection; YouTube user `frollard` ("Thief stealing our package") |
 | **Entry 4** | Ring 401 Empty Body & 30-Min Expiry | `cmd.exe /c "ops\verify-ring-api.cmd"` and `https://developer.amazon.com/docs/ring/release-notes.html#may-28-2026` |

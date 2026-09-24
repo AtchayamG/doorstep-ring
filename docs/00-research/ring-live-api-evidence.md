@@ -72,11 +72,29 @@ ones this device does not have:
 
 | Request | HTTP | Reading |
 | :--- | :--- | :--- |
-| `GET /devices/{id}/events` | **403** | Route exists; `ava.v1:read` is not enough for it. Event history needs a scope the Playground token does not carry. |
+| `GET /devices/{id}/events` | **403** | **Not the documented route.** Ring documents event history at `GET /v1/history/devices/{id}/events`, which returned **200** (section 2a). A made-up route returns 404, so this 403 means something else, and we do not know what. It does not show a missing scope. |
 | `GET /devices/{id}/snapshot` | 404 | No such route. |
 | `GET /devices/{id}/media` | 404 | No such route. |
 | `GET /devices/{id}/recordings` | 404 | No such route. |
 | `GET /events` | 404 | No such route. |
+
+### 2a. Event history at the documented path (2026-09-24)
+
+`ops/probe-ring-events.mjs`, run through `ops/with-ring-token.ps1` with a fresh Playground token.
+Status-only output:
+
+```text
+Device list: HTTP 200
+Documented  GET /v1/history/devices/{id}/events: HTTP 200; content-type application/json
+  items: 7; top-level keys: data
+  item keys: attributes, id, meta, relationships, type; attribute keys: end, event_type, is_third_party_reviewed, start
+  event types: event_type=on_demand, type=history-events
+Old guess   GET /v1/devices/{id}/events: HTTP 403; content-type (none)
+Control     GET /v1/devices/{id}/no-such-route: HTTP 404; content-type (none)
+```
+
+Event history is readable with `ava.v1:read`. Every event is `on_demand` (a live-view session);
+the sandbox device has no motion, doorbell or package events.
 
 The 403/404 split matters: a 403 says "this exists and you may not", a 404 says
 "this is not the endpoint you think it is". **Correction (2026-09-23):** those
@@ -171,9 +189,9 @@ any disk fixture claim `ring-live`.
 
 1. The README's Ring row is upgraded from "401 proves a gateway" to six
    authenticated endpoints returning real data, with request ids.
-2. `ava.v1:read` cannot read event history. Any design that assumed
-   `/devices/{id}/events` needs a broader scope, which the Playground does not
-   issue.
+2. `ava.v1:read` can read event history at the documented
+   `/v1/history/devices/{id}/events` (200 on 2026-09-24; only `on_demand` events). Our earlier
+   "needs a broader scope" reading came from an undocumented path.
 3. The official API documents historical image download via POST. In the
    Playground test it returned 303 then 416 for the preceding 24 hours; WHEP
    returned a 201 SDP answer. The earlier "no snapshot endpoint" claim was wrong.

@@ -15,7 +15,7 @@
   * **Zero Physical Hardware Gate**: The Developers Playground (`developer.amazon.com/ring/console/playground`) is an exceptional developer feature. Being able to test device discovery and explore WHEP streaming without buying or mounting physical doorbells saves days of setup time.
   * **Active Live View Simulation**: The sandbox initiates real WebRTC WHEP sessions (`POST /devices/{id}/media/streaming/whep/sessions` returning HTTP 201 Created) for Package, Vehicle, and Motion event types.
 * **What Needs Improvement**:
-  * **Sandbox Scope (`ava.v1:read`) Blocked on Events (HTTP 403 Forbidden)**: `GET /devices/{id}/events` returned HTTP 403 Forbidden under the only token scope issued by the Playground (`ava.v1:read`). Even though the Doorbell Pro reports `online: true`, developers building event-driven accessibility applications cannot test real event polling or history against the sandbox device.
+  * **Event History Works, but the Sandbox Has No Motion Events**: The documented `GET /v1/history/devices/{id}/events` returned HTTP 200 with the Playground token (7 events, all `on_demand`). We first called an undocumented `/v1/devices/{id}/events`, got 403, and wrongly blamed the scope. The sandbox device records no motion or doorbell events, so an event-driven pipeline still cannot be tested end to end.
   * **Historical Snapshot Access in the Playground**: The [documented](https://developer.amazon.com/docs/ring/api-documentation.html) `POST /devices/{id}/media/image/download` exists. Our 2026-09-23 Playground request returned HTTP 303, but its signed download returned 416 for the latest image in the past 24 hours. The earlier 404s came from guessed GET paths and did not prove endpoint absence. The test did not yield a still for this accessibility pipeline; WHEP negotiation separately returned 201 with an SDP answer, but no frame was received.
   * **Undocumented CC BY 4.0 Third-Party Footage in Live View Simulation**: The sandbox video stream is a licensed Creative Commons clip (*"Thief stealing our package" by YouTube user frollard, CC BY 4.0 / clipped from original*). This attribution requirement is absent from the API documentation and portal guides, creating unexpected copyright compliance obligations for developers capturing frames for training datasets, test fixtures, or public demos.
   * **30-Minute Token Lifespan & Silent 401 Body**: Sandboxed tokens expire in 30 minutes without warning, and the API gateway returns HTTP 401 with `server: envoy` and an entirely empty response body (`(empty body)`). Developers are left guessing why a previously working script failed.
@@ -125,9 +125,9 @@
 ## Prioritised Feature Requests
 
 ### Priority 0 (Critical Developer Experience)
-1. **Ring Partner API — Unblock Sandbox Events (`ava.v1:read`) or Provide Event Mocking**:
-   * *Problem*: `GET /devices/{id}/events` returns HTTP 403 Forbidden under the only scope issued by the Developers Playground (`ava.v1:read`). Developers cannot test event-driven pipelines against the online sandbox device.
-   * *Proposed Solution*: Allow `ava.v1:read` to access `GET /devices/{id}/events` in the sandbox environment, or add a "Trigger Test Event" button in the Developers Playground that generates simulated event records.
+1. **Ring Partner API — Generate Test Events in the Playground**:
+   * *Problem*: Event history is readable (`GET /v1/history/devices/{id}/events`, 200), but the sandbox device logs only `on_demand` live-view events. There is no way to produce a motion, doorbell or package event to test an event-driven pipeline.
+   * *Proposed Solution*: Add a "Trigger Test Event" button that writes a motion or doorbell event to history and delivers it to the app's webhook. Also return 404, not 403, for undocumented routes: a 403 on our guessed path cost us a wrong conclusion.
 2. **Ring Partner API — Reproducible Playground Snapshot**:
    * *Problem*: The documented historical image-download POST returned 303, then its signed download returned 416 for the latest image in the preceding 24 hours. That proves the route is documented and reachable, but it did not provide a frame for this sandbox test.
    * *Proposed Solution*: Supply a Playground snapshot with a known timestamp or a clearly documented way to create stored test media for the image-download endpoint.
